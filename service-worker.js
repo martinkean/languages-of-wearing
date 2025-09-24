@@ -312,7 +312,7 @@ function createOfflineResponse() {
   });
 }
 
-// Handle background sync for offline form submissions (future enhancement)
+// Handle background sync for offline form submissions
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync-form-data') {
     console.log('Service Worker: Background sync triggered');
@@ -323,15 +323,16 @@ self.addEventListener('sync', (event) => {
 // Background sync function to submit cached form data when back online
 async function syncFormData() {
   try {
-    // This would retrieve cached form submissions from IndexedDB
-    // and attempt to submit them when back online
     console.log('Service Worker: Syncing cached form data...');
     
-    // Implementation would go here for production app
-    // 1. Retrieve pending submissions from IndexedDB
-    // 2. Attempt to submit each one to Supabase
-    // 3. Remove successfully submitted entries
-    // 4. Keep failed submissions for next sync attempt
+    // Send message to main thread to trigger sync
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'BACKGROUND_SYNC',
+        action: 'syncOfflineData'
+      });
+    });
     
   } catch (error) {
     console.error('Service Worker: Background sync failed:', error);

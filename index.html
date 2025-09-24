@@ -1,1105 +1,1064 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Language of Wearing</title>
 
-  <!-- PWA Meta Tags -->
-  <meta name="theme-color" content="#6366F1">
+  <!-- PWA Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6366f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Language of Wearing">
 
-  <!-- SEO and Description -->
-  <meta name="description" content="Collect and analyze clothing experiences through interactive forms">
-  <meta name="keywords" content="fashion, clothing, experience, survey, analytics">
+  <!-- Favicon and Icons -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👗</text></svg>">
+  <link rel="apple-touch-icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%236366f1'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='white'>👗</text></svg>">
 
-  <title>The Languages of Wearing</title>
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-
-  <!-- External Stylesheet -->
-  <link rel="stylesheet" href="stylesheet.css">
-
-  <!-- Google Fonts - Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Supabase JavaScript Client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- D3.js for sunburst chart -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="stylesheet.css">
 
   <!-- Supabase Configuration -->
   <script src="config.js"></script>
-
-  <!-- D3.js for Sunburst Charts -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
 <body>
-  <!-- Main Application Container -->
   <div id="app">
-    <!-- Header Section -->
+    <!-- App Header -->
     <header class="app-header">
-      <h1 class="app-title">The Languages of Wearing</h1>
-      <p class="app-subtitle">Share your clothing experiences and help us understand fashion better</p>
+      <h1 class="app-title">The Language of Wearing</h1>
+      <p class="app-subtitle">Share your clothing experiences and discover how fabric makes us feel</p>
     </header>
 
-    <!-- Navigation for Admin Toggle -->
+    <!-- Navigation -->
     <nav class="app-nav">
-      <button id="toggleViewBtn" class="toggle-button" aria-label="Switch between user and admin view">
-        View Responses
+      <!-- PWA Install Buttons -->
+      <button id="installButton" class="toggle-button" style="display: none;">
+        📱 Install App
       </button>
+      <button id="installIosButton" class="toggle-button" style="display: none;">
+        📱 Install on iPhone
+      </button>
+
+      <!-- Online/Offline Status -->
+      <div id="onlineStatus" class="online-status">
+        <span id="statusIndicator" class="status-indicator">🟢</span>
+        <span id="statusText">Online</span>
+      </div>
+
+      <!-- View Toggle -->
+      <button id="toggleView" class="toggle-button">View Responses</button>
     </nav>
 
-    <!-- User Form View -->
-    <main id="userView" class="main-content">
-      <section class="form-section">
-        <form id="clothingForm" class="clothing-form" novalidate>
-          <!-- Question 1: Physical Feeling -->
-          <article class="question-container">
+    <!-- Main Content -->
+    <main id="mainContent" class="main-content">
+      <!-- Clothing Experience Form -->
+      <section id="formSection" class="form-section">
+        <form id="clothingForm" class="clothing-form">
+          <!-- Physical Feeling Question -->
+          <div class="question-container">
             <label for="physicalFeeling" class="question-label">
-              How would you describe the physical feeling of the fashion as you are wearing it?
+              How does your clothing feel physically right now?
             </label>
-            <textarea id="physicalFeeling" name="physicalFeeling" class="text-area-input" rows="4"
-              placeholder="Describe how the clothing feels on your body..." required
-              aria-describedby="physicalFeeling-error"></textarea>
-            <span id="physicalFeeling-error" class="error-message" role="alert"></span>
-          </article>
+            <textarea id="physicalFeeling" name="physicalFeeling" class="text-area-input"
+              placeholder="Describe the physical sensations... comfortable, tight, soft, scratchy, etc." rows="4"
+              required></textarea>
+          </div>
 
-          <!-- Question 2: Material Quality (Radio Buttons) -->
-          <article class="question-container">
-            <fieldset class="radio-fieldset">
-              <legend class="question-label">
-                How would you describe the material the fashion is made of as you wear it?
-              </legend>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" name="materialQuality" value="Great" class="radio-input" required>
-                  <span class="radio-custom"></span>
-                  Great
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="materialQuality" value="Okay" class="radio-input" required>
-                  <span class="radio-custom"></span>
-                  Okay
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="materialQuality" value="Not great" class="radio-input" required>
-                  <span class="radio-custom"></span>
-                  Not great
-                </label>
-              </div>
-              <span id="materialQuality-error" class="error-message" role="alert"></span>
-            </fieldset>
-          </article>
+          <!-- Material Quality Question -->
+          <fieldset class="radio-fieldset">
+            <legend class="question-label">
+              How would you rate the material quality of what you're wearing?
+            </legend>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="materialQuality" value="Great" class="radio-input" required>
+                <span class="radio-text">Great</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="materialQuality" value="Okay" class="radio-input" required>
+                <span class="radio-text">Okay</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="materialQuality" value="Not great" class="radio-input" required>
+                <span class="radio-text">Not great</span>
+              </label>
+            </div>
+          </fieldset>
 
-          <!-- Question 3: Emotional Feeling -->
-          <article class="question-container">
+          <!-- Emotional Feeling Question -->
+          <div class="question-container">
             <label for="emotionalFeeling" class="question-label">
-              How does the fashion you tried on make you feel?
+              How does your clothing make you feel emotionally?
             </label>
-            <textarea id="emotionalFeeling" name="emotionalFeeling" class="text-area-input" rows="4"
-              placeholder="Describe your emotional response to wearing this item..." required
-              aria-describedby="emotionalFeeling-error"></textarea>
-            <span id="emotionalFeeling-error" class="error-message" role="alert"></span>
-          </article>
+            <textarea id="emotionalFeeling" name="emotionalFeeling" class="text-area-input"
+              placeholder="Describe your emotional response... confident, stylish, comfortable, self-conscious, etc."
+              rows="4" required></textarea>
+          </div>
 
-          <!-- Question 4: Favorite Item -->
-          <article class="question-container">
+          <!-- Favorite Item Question -->
+          <div class="question-container">
             <label for="favoriteItem" class="question-label">
-              What is your favourite item of fashion?
+              What's your favorite item of clothing you're wearing today?
             </label>
             <input type="text" id="favoriteItem" name="favoriteItem" class="text-input"
-              placeholder="e.g., vintage denim jacket, silk scarf, leather boots..." required
-              aria-describedby="favoriteItem-error">
-            <span id="favoriteItem-error" class="error-message" role="alert"></span>
-          </article>
+              placeholder="e.g., my vintage denim jacket, comfortable sneakers, soft wool sweater..." required>
+          </div>
 
-          <!-- Question 5: Favorite Reason -->
-          <article class="question-container">
+          <!-- Favorite Reason Question -->
+          <div class="question-container">
             <label for="favoriteReason" class="question-label">
-              Why is it your favourite?
+              Why is this your favorite item?
             </label>
-            <textarea id="favoriteReason" name="favoriteReason" class="text-area-input" rows="3"
-              placeholder="Explain what makes this item special to you..." required
-              aria-describedby="favoriteReason-error"></textarea>
-            <span id="favoriteReason-error" class="error-message" role="alert"></span>
-          </article>
+            <textarea id="favoriteReason" name="favoriteReason" class="text-area-input"
+              placeholder="Explain what makes this item special to you..." rows="3" required></textarea>
+          </div>
 
           <!-- Submit Section -->
-          <section class="submit-section">
-            <button type="submit" id="submitBtn" class="submit-button">
-              <span class="button-text">Submit Response</span>
-              <span class="button-loader hidden" aria-hidden="true"></span>
+          <div class="submit-section">
+            <button type="submit" class="submit-button">
+              <span class="button-text">Share Your Experience</span>
             </button>
-          </section>
+          </div>
         </form>
 
         <!-- Success/Error Messages -->
-        <div id="messageContainer" class="message-container hidden">
-          <div id="successMessage" class="success-message hidden" role="status">
-            <strong>Thank you!</strong> Your response has been submitted successfully.
-          </div>
-          <div id="errorMessage" class="error-message-global hidden" role="alert">
-            <strong>Error:</strong> <span id="errorText">Something went wrong. Please try again.</span>
+        <div id="messageContainer" class="message-container hidden"></div>
+      </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Response Dashboard Access</h3>
+          <button id="closeLoginModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="login-section">
+            <form id="loginForm" class="login-form">
+              <div class="question-container">
+                <label for="username" class="question-label">Username</label>
+                <input type="text" id="username" name="username" class="text-input" placeholder="Enter username"
+                  required>
+              </div>
+              <div class="question-container">
+                <label for="password" class="question-label">Password</label>
+                <input type="password" id="password" name="password" class="text-input" placeholder="Enter password"
+                  required>
+              </div>
+              <div class="submit-section">
+                <button type="submit" class="submit-button">
+                  <span class="button-text">Access Dashboard</span>
+                </button>
+              </div>
+            </form>
+            <div id="loginError" class="error-message-global hidden"></div>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
-    <!-- Login Screen -->
-    <main id="loginView" class="main-content hidden">
-      <section class="form-section">
-        <h2 class="section-title">Login Required</h2>
-        <p style="text-align: center; color: var(--color-gray-600); margin-bottom: var(--spacing-6);">
-          Please enter your credentials to access the responses dashboard.
-        </p>
-        <form id="loginForm" class="clothing-form" style="max-width: 400px; margin: 0 auto;">
-          <div class="question-container">
-            <label for="loginUsername" class="question-label">Username</label>
-            <input type="text" id="loginUsername" class="text-input" placeholder="Enter username" required
-              autocomplete="username">
-          </div>
-          <div class="question-container">
-            <label for="loginPassword" class="question-label">Password</label>
-            <input type="password" id="loginPassword" class="text-input" placeholder="Enter password" required
-              autocomplete="current-password">
-          </div>
-          <div class="submit-section">
-            <button type="submit" class="submit-button">
-              <span class="button-text">Login</span>
-            </button>
-          </div>
-        </form>
-        <div id="loginError" class="error-message-global hidden"
-          style="max-width: 400px; margin: var(--spacing-4) auto 0;">
-          <strong>Login Failed:</strong> <span id="loginErrorText">Invalid username or password.</span>
+    <!-- iOS Install Modal -->
+    <div id="iosInstallModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📱 Install on iPhone</h3>
+          <button id="closeIosModal" class="modal-close">&times;</button>
         </div>
-      </section>
-    </main>
-
-    <!-- Responses Dashboard View -->
-    <main id="adminView" class="main-content hidden">
-      <section class="admin-section">
-        <header class="admin-header">
-          <h2 class="section-title">Responses Dashboard</h2>
-          <div class="admin-controls">
-            <button id="logoutBtn" class="control-button">
-              Logout
-            </button>
-            <button id="refreshDataBtn" class="control-button">
-              Refresh Data
-            </button>
-            <button id="exportDataBtn" class="control-button">
-              Export CSV
-            </button>
+        <div class="modal-body">
+          <p>To install this app on your iPhone:</p>
+          <ol>
+            <li>Tap the <strong class="share-icon">Share</strong> button at the bottom of Safari</li>
+            <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+            <li>Tap <strong>"Add"</strong> in the top right</li>
+          </ol>
+          <div class="install-benefits">
+            <p><strong>Why install?</strong></p>
+            <ul>
+              <li>🚀 Faster loading and better performance</li>
+              <li>📱 Works like a native app</li>
+              <li>🔒 Works offline - never lose your data</li>
+              <li>🏠 Easy access from your home screen</li>
+            </ul>
           </div>
-        </header>
+        </div>
+      </div>
+    </div>
 
-        <!-- Dashboard Navigation -->
-        <nav class="dashboard-nav">
-          <button id="showListViewBtn" class="nav-tab active" data-view="list">
-            All Responses
-          </button>
-          <button id="showChartViewBtn" class="nav-tab" data-view="chart">
-            Response Visualization
-          </button>
-        </nav>
+    <!-- Responses Dashboard -->
+    <section id="responsesSection" class="admin-section hidden">
+      <div class="admin-header">
+        <h2 class="section-title">Response Dashboard</h2>
+        <div class="admin-controls">
+          <button id="refreshData" class="control-button">🔄 Refresh</button>
+          <button id="exportData" class="control-button">📊 Export CSV</button>
+          <button id="logoutButton" class="control-button">🚪 Logout</button>
+        </div>
+      </div>
 
-        <!-- List View -->
-        <section id="listView" class="dashboard-view">
-          <div class="data-container">
-            <div id="loadingIndicator" class="loading-indicator">
-              Loading responses...
-            </div>
-            <div id="noDataMessage" class="no-data-message hidden">
-              No responses found. Submit some responses first!
-            </div>
-            <div id="responsesList" class="responses-list hidden"></div>
+      <!-- Dashboard Navigation -->
+      <nav class="dashboard-nav">
+        <button class="nav-tab active" data-tab="visualization">📈 Response Visualization</button>
+        <button class="nav-tab" data-tab="responses">📝 All Responses</button>
+      </nav>
+
+      <!-- Visualization Tab -->
+      <div id="visualizationTab" class="dashboard-view">
+        <div id="loadingIndicator" class="loading-indicator">
+          Loading response data...
+        </div>
+        <div id="noDataMessage" class="no-data-message hidden">
+          No responses available yet. Share the form to start collecting data!
+        </div>
+        <div id="chartContainer" class="chart-container hidden">
+          <h3 class="chart-title">Clothing Experience Insights</h3>
+          <div class="chart-area">
+            <div id="sunburstContainer"></div>
           </div>
-        </section>
+        </div>
+      </div>
 
-        <!-- Chart View -->
-        <section id="chartView" class="dashboard-view hidden">
-          <div class="chart-container">
-            <h3 class="chart-title">Clothing Experience Wheel</h3>
-            <div id="sunburstChart" class="chart-area" style="text-align: center;">
-              <div id="sunburstContainer"></div>
-            </div>
-            <div id="chartLegend" class="chart-stats"></div>
-          </div>
-        </section>
-      </section>
-    </main>
+      <!-- Responses Tab -->
+      <div id="responsesTab" class="dashboard-view hidden">
+        <div id="responsesLoadingIndicator" class="loading-indicator">
+          Loading responses...
+        </div>
+        <div id="responsesNoDataMessage" class="no-data-message hidden">
+          No responses to display yet.
+        </div>
+        <div id="dataContainer" class="data-container hidden">
+          <div id="responsesList" class="responses-list"></div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <!-- JavaScript for Application Logic -->
   <script>
-    // Application Configuration
-    const CONFIG = {
-      // Supabase credentials loaded from config.js
-      SUPABASE_URL: window.SUPABASE_CONFIG?.SUPABASE_URL || '',
-      SUPABASE_ANON_KEY: window.SUPABASE_CONFIG?.SUPABASE_ANON_KEY || '',
-      TABLE_NAME: 'clothing_responses',
-      LOGIN_CREDENTIALS: {
-        username: 'moderator',
-        password: 'thecatsatonthemat2025'
+    // PWA Variables
+    let deferredPrompt;
+    let isInstalled = false;
+    let isLoggedIn = false;
+    let supabase;
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', function () {
+      initializeApp();
+      setupPWA();
+      setupAuth();
+      setupNavigation();
+      setupForms();
+      setupOnlineOfflineHandling();
+    });
+
+    // Initialize Supabase and app
+    function initializeApp() {
+      // Initialize Supabase
+      if (window.SUPABASE_CONFIG && window.supabase) {
+        supabase = window.supabase.createClient(
+          window.SUPABASE_CONFIG.SUPABASE_URL,
+          window.SUPABASE_CONFIG.SUPABASE_ANON_KEY
+        );
+        console.log('Supabase initialized');
+      } else {
+        console.warn('Supabase not configured - using offline mode');
       }
-    };
 
-    // Validate configuration on app start
-    function validateConfig() {
-      if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
-        console.error('Missing Supabase configuration. Please set environment variables.');
-
-        // Show user-friendly error message
-        const errorMessage = `
-          <div style="
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem;
-            border: 1px solid #fca5a5;
-          ">
-            <strong>Configuration Error:</strong> 
-            Database connection not configured. Please contact the administrator.
-          </div>
-        `;
-
-        document.getElementById('app').innerHTML = errorMessage + document.getElementById('app').innerHTML;
-        return false;
-      }
-      return true;
-    }
-
-    // Global State Management
-    const AppState = {
-      currentView: 'user',
-      isLoggedIn: false,
-      responses: [],
-      isLoading: false
-    };
-
-    // DOM Elements Cache
-    const Elements = {
-      // Views
-      userView: document.getElementById('userView'),
-      loginView: document.getElementById('loginView'),
-      adminView: document.getElementById('adminView'),
-      toggleViewBtn: document.getElementById('toggleViewBtn'),
-
-      // Form
-      clothingForm: document.getElementById('clothingForm'),
-      submitBtn: document.getElementById('submitBtn'),
-      messageContainer: document.getElementById('messageContainer'),
-      successMessage: document.getElementById('successMessage'),
-      errorMessage: document.getElementById('errorMessage'),
-      errorText: document.getElementById('errorText'),
-
-      // Login
-      loginForm: document.getElementById('loginForm'),
-      loginUsername: document.getElementById('loginUsername'),
-      loginPassword: document.getElementById('loginPassword'),
-      loginError: document.getElementById('loginError'),
-      loginErrorText: document.getElementById('loginErrorText'),
-      logoutBtn: document.getElementById('logoutBtn'),
-
-      // Admin Dashboard
-      refreshDataBtn: document.getElementById('refreshDataBtn'),
-      exportDataBtn: document.getElementById('exportDataBtn'),
-      showListViewBtn: document.getElementById('showListViewBtn'),
-      showChartViewBtn: document.getElementById('showChartViewBtn'),
-      listView: document.getElementById('listView'),
-      chartView: document.getElementById('chartView'),
-      responsesList: document.getElementById('responsesList'),
-      loadingIndicator: document.getElementById('loadingIndicator'),
-      noDataMessage: document.getElementById('noDataMessage'),
-      sunburstContainer: document.getElementById('sunburstContainer'),
-      chartLegend: document.getElementById('chartLegend')
-    };
-
-    // Utility Functions
-    const Utils = {
-      // Format date for display
-      formatDate(dateString) {
-        return new Date(dateString).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      },
-
-      // Sanitize text for HTML display
-      sanitizeText(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      },
-
-      // Show loading state
-      showLoading(element, text = 'Loading...') {
-        element.innerHTML = `<div class="loading-indicator">${text}</div>`;
-      },
-
-      // Generate CSV from data
-      generateCSV(data) {
-        if (!data.length) return '';
-
-        const headers = Object.keys(data[0]);
-        const csvContent = [
-          headers.join(','),
-          ...data.map(row =>
-            headers.map(header => {
-              const value = row[header] || '';
-              return `"${value.toString().replace(/"/g, '""')}"`;
-            }).join(',')
-          )
-        ].join('\n');
-
-        return csvContent;
-      }
-    };
-
-    // Form Validation
-    const FormValidator = {
-      // Validate individual field
-      validateField(field) {
-        const value = field.value.trim();
-        const fieldName = field.name;
-        let isValid = true;
-        let message = '';
-
-        // Remove existing error state
-        field.classList.remove('error');
-        const errorElement = document.getElementById(`${fieldName}-error`);
-        if (errorElement) {
-          errorElement.textContent = '';
-        }
-
-        // Check required fields
-        if (field.required && !value) {
-          isValid = false;
-          message = 'This field is required.';
-        }
-
-        // Specific validation for radio buttons
-        if (field.type === 'radio' && fieldName === 'materialQuality') {
-          const checkedRadio = document.querySelector('input[name="materialQuality"]:checked');
-          if (!checkedRadio) {
-            isValid = false;
-            message = 'Please select a material quality rating.';
-          }
-        }
-
-        // Text area minimum length
-        if (field.tagName === 'TEXTAREA' && value && value.length < 10) {
-          isValid = false;
-          message = 'Please provide a more detailed response (at least 10 characters).';
-        }
-
-        // Show error if invalid
-        if (!isValid) {
-          field.classList.add('error');
-          if (errorElement) {
-            errorElement.textContent = message;
-          }
-        }
-
-        return isValid;
-      },
-
-      // Validate entire form
-      validateForm(form) {
-        const fields = form.querySelectorAll('input[required], textarea[required]');
-        let isFormValid = true;
-
-        fields.forEach(field => {
-          if (!this.validateField(field)) {
-            isFormValid = false;
-          }
-        });
-
-        // Special handling for radio button group
-        const radioGroup = form.querySelector('input[name="materialQuality"]');
-        if (radioGroup && !this.validateField(radioGroup)) {
-          isFormValid = false;
-        }
-
-        return isFormValid;
-      }
-    };
-
-    // Supabase Integration (Mock Implementation)
-    const SupabaseClient = {
-      supabase: null,
-
-      // Initialize connection with real Supabase client
-      init() {
-        this.supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        console.log('Real Supabase client initialized');
-        return this;
-      },
-
-      // Submit response to database
-      async submitResponse(responseData) {
-        try {
-          const { data, error } = await this.supabase
-            .from(CONFIG.TABLE_NAME)
-            .insert([responseData])
-            .select();
-
-          if (error) {
-            console.error('Supabase insert error:', error);
-            return { data: null, error: error.message };
-          }
-
-          return { data: data[0], error: null };
-        } catch (error) {
-          console.error('Submit response error:', error);
-          return { data: null, error: error.message };
-        }
-      },
-
-      // Fetch all responses
-      async getResponses() {
-        try {
-          const { data, error } = await this.supabase
-            .from(CONFIG.TABLE_NAME)
-            .select('*')
-            .order('created_at', { ascending: false });
-
-          if (error) {
-            console.error('Supabase select error:', error);
-            return { data: null, error: error.message };
-          }
-
-          return { data, error: null };
-        } catch (error) {
-          console.error('Get responses error:', error);
-          return { data: null, error: error.message };
-        }
-      }
-    };
-
-    // UI State Management
-    const UIManager = {
-      // Check login status on load
-      checkLoginStatus() {
-        const loggedIn = sessionStorage.getItem('moderator_logged_in');
-        AppState.isLoggedIn = loggedIn === 'true';
-        return AppState.isLoggedIn;
-      },
-
-      // Handle login
-      async handleLogin(username, password) {
-        if (username === CONFIG.LOGIN_CREDENTIALS.username &&
-          password === CONFIG.LOGIN_CREDENTIALS.password) {
-          AppState.isLoggedIn = true;
-          sessionStorage.setItem('moderator_logged_in', 'true');
-          this.showAdminView();
-          return true;
-        }
-        return false;
-      },
-
-      // Handle logout
-      handleLogout() {
-        AppState.isLoggedIn = false;
-        sessionStorage.removeItem('moderator_logged_in');
-        this.showUserView();
-      },
-
-      // Show user view
-      showUserView() {
-        Elements.userView.classList.remove('hidden');
-        Elements.loginView.classList.add('hidden');
-        Elements.adminView.classList.add('hidden');
-        Elements.toggleViewBtn.textContent = 'View Responses';
-        AppState.currentView = 'user';
-      },
-
-      // Show login view
-      showLoginView() {
-        Elements.userView.classList.add('hidden');
-        Elements.loginView.classList.remove('hidden');
-        Elements.adminView.classList.add('hidden');
-        Elements.toggleViewBtn.textContent = 'Back to Form';
-        AppState.currentView = 'login';
-      },
-
-      // Show admin view
-      showAdminView() {
-        Elements.userView.classList.add('hidden');
-        Elements.loginView.classList.add('hidden');
-        Elements.adminView.classList.remove('hidden');
-        Elements.toggleViewBtn.textContent = 'Back to Form';
-        AppState.currentView = 'admin';
-        this.loadAdminData();
-      },
-
-      // Toggle between user and admin views
-      toggleView() {
-        if (AppState.currentView === 'user') {
-          // Check if logged in
-          if (this.checkLoginStatus()) {
-            this.showAdminView();
-          } else {
-            this.showLoginView();
-          }
-        } else {
-          this.showUserView();
-        }
-      },
-
-      // Show success message
-      showSuccess(message) {
-        Elements.messageContainer.classList.remove('hidden');
-        Elements.successMessage.classList.remove('hidden');
-        Elements.errorMessage.classList.add('hidden');
-        Elements.successMessage.querySelector('strong').nextSibling.textContent = ' ' + message;
-
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-          Elements.messageContainer.classList.add('hidden');
-        }, 5000);
-      },
-
-      // Show error message
-      showError(message) {
-        Elements.messageContainer.classList.remove('hidden');
-        Elements.errorMessage.classList.remove('hidden');
-        Elements.successMessage.classList.add('hidden');
-        Elements.errorText.textContent = message;
-
-        // Auto-hide after 7 seconds
-        setTimeout(() => {
-          Elements.messageContainer.classList.add('hidden');
-        }, 7000);
-      },
-
-      // Set loading state for submit button
-      setSubmitLoading(isLoading) {
-        const buttonText = Elements.submitBtn.querySelector('.button-text');
-        const buttonLoader = Elements.submitBtn.querySelector('.button-loader');
-
-        if (isLoading) {
-          Elements.submitBtn.disabled = true;
-          Elements.submitBtn.classList.add('loading');
-          buttonText.textContent = 'Submitting...';
-          buttonLoader.classList.remove('hidden');
-        } else {
-          Elements.submitBtn.disabled = false;
-          Elements.submitBtn.classList.remove('loading');
-          buttonText.textContent = 'Submit Response';
-          buttonLoader.classList.add('hidden');
-        }
-      },
-
-      // Load admin dashboard data
-      async loadAdminData() {
-        Elements.loadingIndicator.classList.remove('hidden');
-        Elements.noDataMessage.classList.add('hidden');
-        Elements.responsesList.classList.add('hidden');
-
-        const { data, error } = await SupabaseClient.getResponses();
-
-        Elements.loadingIndicator.classList.add('hidden');
-
-        if (error) {
-          this.showError('Failed to load responses: ' + error);
-          return;
-        }
-
-        AppState.responses = data || [];
-
-        if (AppState.responses.length === 0) {
-          Elements.noDataMessage.classList.remove('hidden');
-        } else {
-          this.renderResponsesList();
-          this.renderSunburstChart();
-        }
-      },
-
-      // Render responses list
-      renderResponsesList() {
-        const html = AppState.responses.map((response, index) => `
-          <article class="response-card">
-            <header class="response-header">
-              <h4 class="response-title">Response #${AppState.responses.length - index}</h4>
-              <time class="response-date">${Utils.formatDate(response.created_at)}</time>
-            </header>
-            <div class="response-content">
-              <div class="response-item">
-                <strong>Physical Feeling:</strong>
-                <p>${Utils.sanitizeText(response.physical_feeling)}</p>
-              </div>
-              <div class="response-item">
-                <strong>Material Quality:</strong>
-                <span class="material-badge material-${response.material_quality.toLowerCase().replace(' ', '-')}">${response.material_quality}</span>
-              </div>
-              <div class="response-item">
-                <strong>Emotional Feeling:</strong>
-                <p>${Utils.sanitizeText(response.emotional_feeling)}</p>
-              </div>
-              <div class="response-item">
-                <strong>Favorite Item:</strong>
-                <p>${Utils.sanitizeText(response.favorite_item)}</p>
-              </div>
-              <div class="response-item">
-                <strong>Favorite Reason:</strong>
-                <p>${Utils.sanitizeText(response.favorite_reason)}</p>
-              </div>
-            </div>
-          </article>
-        `).join('');
-
-        Elements.responsesList.innerHTML = html;
-        Elements.responsesList.classList.remove('hidden');
-      },
-
-      // Render sunburst chart using D3.js
-      renderSunburstChart() {
-        if (!window.d3 || AppState.responses.length === 0) {
-          Elements.sunburstContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">No data available for visualization</p>';
-          return;
-        }
-
-        // Clear previous chart
-        Elements.sunburstContainer.innerHTML = '';
-
-        // Process data for sunburst
-        const sunburstData = this.processSunburstData();
-
-        // Create D3 sunburst
-        this.createD3Sunburst(sunburstData);
-      },
-
-      // Process response data into sunburst structure
-      processSunburstData() {
-        const responses = AppState.responses;
-
-        // Create hierarchical data structure
-        const root = {
-          name: "Clothing Experiences",
-          children: [
-            {
-              name: "FEEL",
-              children: [
-                {
-                  name: "Physical",
-                  children: this.categorizeTextResponses(responses.map(r => r.physical_feeling), 'physical')
-                },
-                {
-                  name: "Emotional",
-                  children: this.categorizeTextResponses(responses.map(r => r.emotional_feeling), 'emotional')
-                }
-              ]
-            },
-            {
-              name: "MATERIAL",
-              children: [
-                { name: "Great", value: responses.filter(r => r.material_quality === 'Great').length },
-                { name: "Okay", value: responses.filter(r => r.material_quality === 'Okay').length },
-                { name: "Not great", value: responses.filter(r => r.material_quality === 'Not great').length }
-              ]
-            },
-            {
-              name: "FAVOURITE",
-              children: [
-                {
-                  name: "Items",
-                  children: this.categorizeTextResponses(responses.map(r => r.favorite_item), 'items')
-                },
-                {
-                  name: "Reasons",
-                  children: this.categorizeTextResponses(responses.map(r => r.favorite_reason), 'reasons')
-                }
-              ]
-            }
-          ]
-        };
-
-        return root;
-      },
-
-      // Categorize text responses into groups
-      categorizeTextResponses(responses, type) {
-        const categories = {};
-
-        responses.forEach(response => {
-          if (!response) return;
-
-          // Simple keyword-based categorization
-          let category = 'Other';
-          const text = response.toLowerCase();
-
-          if (type === 'physical') {
-            if (text.includes('comfort') || text.includes('soft') || text.includes('cozy')) category = 'Comfortable';
-            else if (text.includes('rough') || text.includes('scratchy') || text.includes('irritating')) category = 'Uncomfortable';
-            else if (text.includes('warm') || text.includes('hot')) category = 'Warm';
-            else if (text.includes('cool') || text.includes('cold') || text.includes('breathable')) category = 'Cool';
-            else if (text.includes('tight') || text.includes('loose') || text.includes('fit')) category = 'Fit';
-          } else if (type === 'emotional') {
-            if (text.includes('confident') || text.includes('powerful') || text.includes('strong')) category = 'Confident';
-            else if (text.includes('happy') || text.includes('joy') || text.includes('good')) category = 'Happy';
-            else if (text.includes('comfortable') || text.includes('relaxed') || text.includes('calm')) category = 'Relaxed';
-            else if (text.includes('stylish') || text.includes('fashionable') || text.includes('trendy')) category = 'Stylish';
-            else if (text.includes('beautiful') || text.includes('pretty') || text.includes('attractive')) category = 'Beautiful';
-          } else if (type === 'items') {
-            if (text.includes('shirt') || text.includes('top') || text.includes('blouse')) category = 'Tops';
-            else if (text.includes('pants') || text.includes('jeans') || text.includes('trousers')) category = 'Bottoms';
-            else if (text.includes('dress') || text.includes('skirt')) category = 'Dresses';
-            else if (text.includes('jacket') || text.includes('coat') || text.includes('blazer')) category = 'Outerwear';
-            else if (text.includes('shoe') || text.includes('boot') || text.includes('sneaker')) category = 'Footwear';
-            else if (text.includes('hat') || text.includes('scarf') || text.includes('jewelry')) category = 'Accessories';
-          } else if (type === 'reasons') {
-            if (text.includes('comfort') || text.includes('comfortable')) category = 'Comfort';
-            else if (text.includes('style') || text.includes('fashionable') || text.includes('looks')) category = 'Style';
-            else if (text.includes('versatile') || text.includes('matches') || text.includes('goes with')) category = 'Versatile';
-            else if (text.includes('quality') || text.includes('durable') || text.includes('lasts')) category = 'Quality';
-            else if (text.includes('memory') || text.includes('sentimental') || text.includes('special')) category = 'Sentimental';
-          }
-
-          categories[category] = (categories[category] || 0) + 1;
-        });
-
-        return Object.entries(categories).map(([name, value]) => ({ name, value }));
-      },
-
-      // Create D3.js sunburst chart
-      createD3Sunburst(data) {
-        const width = 600;
-        const height = 600;
-        const radius = Math.min(width, height) / 2;
-
-        // Color palette from oyster wheel
-        const colorPalette = {
-          'FEEL': ['#4a90e2', '#357abd', '#2c5aa0', '#1e4a8c'],
-          'MATERIAL': ['#f5a623', '#e8931e', '#d07c18', '#b86914'],
-          'FAVOURITE': ['#7ed321', '#6bb71c', '#5a9b17', '#4a7c13']
-        };
-
-        // Create SVG
-        const svg = d3.select(Elements.sunburstContainer)
-          .append('svg')
-          .attr('width', width)
-          .attr('height', height)
-          .style('font-family', 'Inter, sans-serif')
-          .style('font-weight', '300');
-
-        const g = svg.append('g')
-          .attr('transform', `translate(${width / 2},${height / 2})`);
-
-        // Create hierarchy
-        const root = d3.hierarchy(data)
-          .sum(d => d.value)
-          .sort((a, b) => b.value - a.value);
-
-        // Create partition layout
-        const partition = d3.partition()
-          .size([2 * Math.PI, radius]);
-
-        partition(root);
-
-        // Create arc generator
-        const arc = d3.arc()
-          .startAngle(d => d.x0)
-          .endAngle(d => d.x1)
-          .innerRadius(d => d.y0)
-          .outerRadius(d => d.y1);
-
-        // Text arc for labels
-        const textArc = d3.arc()
-          .startAngle(d => d.x0)
-          .endAngle(d => d.x1)
-          .innerRadius(d => (d.y0 + d.y1) / 2)
-          .outerRadius(d => (d.y0 + d.y1) / 2);
-
-        // Add paths
-        const paths = g.selectAll('path')
-          .data(root.descendants())
-          .join('path')
-          .attr('d', arc)
-          .attr('fill', d => {
-            if (d.depth === 0) return '#ffffff';
-            const mainCategory = d.ancestors().find(a => a.depth === 1);
-            if (!mainCategory) return '#cccccc';
-            const colors = colorPalette[mainCategory.data.name] || ['#cccccc'];
-            return colors[Math.min(d.depth - 1, colors.length - 1)] || '#cccccc';
-          })
-          .attr('stroke', '#ffffff')
-          .attr('stroke-width', 2);
-
-        // Add text labels within rings
-        g.selectAll('text.ring-label')
-          .data(root.descendants().filter(d => d.depth > 0 && (d.x1 - d.x0) > 0.1))
-          .join('text')
-          .attr('class', 'ring-label')
-          .attr('transform', d => {
-            const angle = (d.x0 + d.x1) / 2;
-            const radius = (d.y0 + d.y1) / 2;
-            const x = Math.sin(angle) * radius;
-            const y = -Math.cos(angle) * radius;
-            const rotation = angle * 180 / Math.PI - 90;
-            return `translate(${x},${y}) rotate(${rotation > 90 ? rotation + 180 : rotation})`;
-          })
-          .style('text-anchor', 'middle')
-          .style('font-family', 'Inter, sans-serif')
-          .style('font-weight', '300')
-          .style('font-size', d => {
-            const arcLength = (d.x1 - d.x0) * (d.y0 + d.y1) / 2;
-            return Math.min(12, arcLength / 8) + 'px';
-          })
-          .style('fill', d => {
-            // Use white text on dark colors, black on light colors
-            const mainCategory = d.ancestors().find(a => a.depth === 1);
-            if (!mainCategory) return '#000000';
-            const colors = colorPalette[mainCategory.data.name] || ['#cccccc'];
-            const bgColor = colors[Math.min(d.depth - 1, colors.length - 1)] || '#cccccc';
-            // Simple brightness check
-            return ['#7ed321', '#f5a623'].includes(bgColor) ? '#000000' : '#ffffff';
-          })
-          .text(d => {
-            const text = d.data.name;
-            const maxLength = Math.floor((d.x1 - d.x0) * 20);
-            return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
-          });
-
-        // Add center text
-        g.append('text')
-          .attr('text-anchor', 'middle')
-          .attr('y', -10)
-          .style('font-family', 'Inter, sans-serif')
-          .style('font-weight', '300')
-          .style('font-size', '16px')
-          .style('fill', '#000000')
-          .text('CLOTHING');
-
-        g.append('text')
-          .attr('text-anchor', 'middle')
-          .attr('y', 10)
-          .style('font-family', 'Inter, sans-serif')
-          .style('font-weight', '300')
-          .style('font-size', '16px')
-          .style('fill', '#000000')
-          .text('EXPERIENCES');
-
-        // Add legend
-        const legendData = [
-          { name: 'FEEL', color: '#4a90e2' },
-          { name: 'MATERIAL', color: '#f5a623' },
-          { name: 'FAVOURITE', color: '#7ed321' }
-        ];
-
-        const legend = Elements.chartLegend;
-        legend.innerHTML = legendData.map(item => `
-          <div class="stat-item">
-            <span class="stat-label" style="display: flex; align-items: center;">
-              <span style="width: 16px; height: 16px; background: ${item.color}; border-radius: 3px; margin-right: 8px;"></span>
-              ${item.name}
-            </span>
-            <span class="stat-value">${root.children.find(child => child.data.name === item.name)?.value || 0}</span>
-          </div>
-        `).join('');
-      },
-
-      // Switch dashboard views
-      switchDashboardView(view) {
-        // Update nav tabs
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-          tab.classList.remove('active');
-        });
-        document.querySelector(`[data-view="${view}"]`).classList.add('active');
-
-        // Show appropriate view
-        Elements.listView.classList.toggle('hidden', view !== 'list');
-        Elements.chartView.classList.toggle('hidden', view !== 'chart');
-      },
-
-      // Export data as CSV
-      exportData() {
-        if (AppState.responses.length === 0) {
-          this.showError('No data to export');
-          return;
-        }
-
-        const csvData = Utils.generateCSV(AppState.responses);
-        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-
-        if (link.download !== undefined) {
-          const url = URL.createObjectURL(blob);
-          link.setAttribute('href', url);
-          link.setAttribute('download', `clothing-responses-${new Date().toISOString().split('T')[0]}.csv`);
-          link.style.visibility = 'hidden';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      }
-    };
-
-    // Form Handler
-    const FormHandler = {
-      // Handle login form submission
-      async handleLogin(event) {
-        event.preventDefault();
-
-        const username = Elements.loginUsername.value.trim();
-        const password = Elements.loginPassword.value;
-
-        const success = await UIManager.handleLogin(username, password);
-
-        if (success) {
-          Elements.loginForm.reset();
-          Elements.loginError.classList.add('hidden');
-        } else {
-          Elements.loginError.classList.remove('hidden');
-          Elements.loginPassword.value = '';
-          Elements.loginUsername.focus();
-        }
-      },
-
-      // Handle form submission
-      async handleSubmit(event) {
-        event.preventDefault();
-
-        const form = event.target;
-
-        // Validate form
-        if (!FormValidator.validateForm(form)) {
-          return;
-        }
-
-        // Prepare form data
-        const formData = new FormData(form);
-        const responseData = {
-          physical_feeling: formData.get('physicalFeeling').trim(),
-          material_quality: formData.get('materialQuality'),
-          emotional_feeling: formData.get('emotionalFeeling').trim(),
-          favorite_item: formData.get('favoriteItem').trim(),
-          favorite_reason: formData.get('favoriteReason').trim()
-        };
-
-        // Show loading state
-        UIManager.setSubmitLoading(true);
-
-        // Submit to database
-        const { data, error } = await SupabaseClient.submitResponse(responseData);
-
-        // Hide loading state
-        UIManager.setSubmitLoading(false);
-
-        if (error) {
-          UIManager.showError('Failed to submit response. Please try again.');
-          return;
-        }
-
-        // Show success and reset form
-        UIManager.showSuccess('Your response has been submitted successfully!');
-        form.reset();
-
-        // Remove any error states
-        form.querySelectorAll('.error').forEach(field => {
-          field.classList.remove('error');
-        });
-        form.querySelectorAll('.error-message').forEach(error => {
-          error.textContent = '';
-        });
-      }
-    };
-
-    // Event Listeners
-    function initEventListeners() {
-      // Form submission
-      Elements.clothingForm.addEventListener('submit', FormHandler.handleSubmit);
-
-      // Login form submission
-      Elements.loginForm.addEventListener('submit', FormHandler.handleLogin);
-
-      // Field validation on blur
-      Elements.clothingForm.addEventListener('blur', (event) => {
-        if (event.target.matches('input, textarea')) {
-          FormValidator.validateField(event.target);
-        }
-      }, true);
-
-      // View toggle
-      Elements.toggleViewBtn.addEventListener('click', UIManager.toggleView.bind(UIManager));
-
-      // Logout button
-      Elements.logoutBtn.addEventListener('click', UIManager.handleLogout.bind(UIManager));
-
-      // Admin dashboard controls
-      Elements.refreshDataBtn.addEventListener('click', UIManager.loadAdminData.bind(UIManager));
-      Elements.exportDataBtn.addEventListener('click', UIManager.exportData.bind(UIManager));
-
-      // Dashboard navigation
-      Elements.showListViewBtn.addEventListener('click', () => UIManager.switchDashboardView('list'));
-      Elements.showChartViewBtn.addEventListener('click', () => UIManager.switchDashboardView('chart'));
-    }
-
-    // PWA Service Worker Registration
-    function registerServiceWorker() {
+      // Register service worker
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('Service Worker registered:', registration);
+          })
+          .catch((error) => {
+            console.error('Service Worker registration failed:', error);
+          });
       }
     }
 
-    // Application Initialization
-    function initApp() {
-      // Validate configuration first
-      if (!validateConfig()) {
-        console.log('App initialization stopped due to configuration errors');
+    // PWA Installation Setup
+    function setupPWA() {
+      const installButton = document.getElementById('installButton');
+      const installIosButton = document.getElementById('installIosButton');
+      const iosModal = document.getElementById('iosInstallModal');
+      const closeIosModal = document.getElementById('closeIosModal');
+
+      // Check if already installed
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        isInstalled = true;
         return;
       }
 
-      // Initialize Supabase client
-      SupabaseClient.init();
+      // Detect iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
 
-      // Set up event listeners
-      initEventListeners();
+      if (isIOS && !isInStandaloneMode) {
+        // Show iOS install button
+        installIosButton.style.display = 'inline-block';
+        installIosButton.addEventListener('click', () => {
+          iosModal.classList.remove('hidden');
+        });
+      } else {
+        // Show regular install button for Android/Chrome
+        installButton.style.display = 'inline-block';
+      }
 
-      // Register service worker for PWA
-      registerServiceWorker();
+      // iOS modal close
+      closeIosModal.addEventListener('click', () => {
+        iosModal.classList.add('hidden');
+      });
 
-      // Check login status and URL parameters
-      UIManager.checkLoginStatus();
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('admin') === 'true') {
-        if (UIManager.checkLoginStatus()) {
-          UIManager.showAdminView();
+      // Click outside to close iOS modal
+      iosModal.addEventListener('click', (e) => {
+        if (e.target === iosModal) {
+          iosModal.classList.add('hidden');
+        }
+      });
+
+      // Listen for beforeinstallprompt event
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installButton.style.display = 'inline-block';
+      });
+
+      // Install button click handler
+      installButton.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            installButton.style.display = 'none';
+          }
+          deferredPrompt = null;
+        }
+      });
+
+      // Listen for app installed event
+      window.addEventListener('appinstalled', () => {
+        installButton.style.display = 'none';
+        installIosButton.style.display = 'none';
+        isInstalled = true;
+        console.log('PWA installed successfully');
+      });
+    }
+
+    // Online/Offline Status
+    function setupOnlineOfflineHandling() {
+      const statusIndicator = document.getElementById('statusIndicator');
+      const statusText = document.getElementById('statusText');
+
+      function updateOnlineStatus() {
+        if (navigator.onLine) {
+          statusIndicator.textContent = '🟢';
+          statusIndicator.className = 'status-indicator online';
+          statusText.textContent = 'Online';
+          syncOfflineData();
         } else {
-          UIManager.showLoginView();
+          statusIndicator.textContent = '🔴';
+          statusIndicator.className = 'status-indicator offline';
+          statusText.textContent = 'Offline';
         }
       }
 
-      console.log('The Language of Wearing app initialized');
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
     }
 
-    // Start the application when DOM is loaded
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
+    // IndexedDB Setup for offline storage
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('ClothingResponsesDB', 1);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('responses')) {
+            const store = db.createObjectStore('responses', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+      });
     }
+
+    // Save response offline
+    async function saveResponseOffline(responseData) {
+      try {
+        const db = await initDB();
+        const transaction = db.transaction(['responses'], 'readwrite');
+        const store = transaction.objectStore('responses');
+
+        const dataToSave = {
+          ...responseData,
+          timestamp: new Date().toISOString(),
+          synced: false
+        };
+
+        await store.add(dataToSave);
+        console.log('Response saved offline');
+        return true;
+      } catch (error) {
+        console.error('Error saving offline:', error);
+        return false;
+      }
+    }
+
+    // Sync offline data when online
+    async function syncOfflineData() {
+      if (!navigator.onLine || !supabase) return;
+
+      try {
+        const db = await initDB();
+        const transaction = db.transaction(['responses'], 'readwrite');
+        const store = transaction.objectStore('responses');
+        const unsynced = await store.getAll();
+
+        const toSync = unsynced.filter(item => !item.synced);
+        if (toSync.length === 0) return;
+
+        let syncedCount = 0;
+        for (const response of toSync) {
+          try {
+            const { error } = await supabase
+              .from('clothing_responses')
+              .insert([{
+                physical_feeling: response.physical_feeling,
+                material_quality: response.material_quality,
+                emotional_feeling: response.emotional_feeling,
+                favorite_item: response.favorite_item,
+                favorite_reason: response.favorite_reason
+              }]);
+
+            if (!error) {
+              // Mark as synced
+              response.synced = true;
+              await store.put(response);
+              syncedCount++;
+            }
+          } catch (error) {
+            console.error('Error syncing individual response:', error);
+          }
+        }
+
+        if (syncedCount > 0) {
+          showMessage(`Synced ${syncedCount} offline response${syncedCount > 1 ? 's' : ''}!`, 'success');
+        }
+      } catch (error) {
+        console.error('Error during sync:', error);
+      }
+    }
+
+    // Authentication Setup
+    function setupAuth() {
+      isLoggedIn = sessionStorage.getItem('clothingAppAuth') === 'true';
+
+      if (isLoggedIn) {
+        showResponsesView();
+      }
+    }
+
+    // Navigation Setup
+    function setupNavigation() {
+      const toggleView = document.getElementById('toggleView');
+      const loginModal = document.getElementById('loginModal');
+      const closeLoginModal = document.getElementById('closeLoginModal');
+      const logoutButton = document.getElementById('logoutButton');
+
+      toggleView.addEventListener('click', () => {
+        if (isLoggedIn) {
+          if (document.getElementById('responsesSection').classList.contains('hidden')) {
+            showResponsesView();
+          } else {
+            showFormView();
+          }
+        } else {
+          loginModal.classList.remove('hidden');
+        }
+      });
+
+      closeLoginModal.addEventListener('click', () => {
+        loginModal.classList.add('hidden');
+      });
+
+      loginModal.addEventListener('click', (e) => {
+        if (e.target === loginModal) {
+          loginModal.classList.add('hidden');
+        }
+      });
+
+      logoutButton.addEventListener('click', () => {
+        isLoggedIn = false;
+        sessionStorage.removeItem('clothingAppAuth');
+        showFormView();
+      });
+
+      // Dashboard navigation
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          switchDashboardTab(tab.dataset.tab);
+        });
+      });
+    }
+
+    // Form Setup
+    function setupForms() {
+      const clothingForm = document.getElementById('clothingForm');
+      const loginForm = document.getElementById('loginForm');
+      const refreshData = document.getElementById('refreshData');
+      const exportData = document.getElementById('exportData');
+
+      clothingForm.addEventListener('submit', handleFormSubmit);
+      loginForm.addEventListener('submit', handleLogin);
+      refreshData.addEventListener('click', loadResponseData);
+      exportData.addEventListener('click', exportToCSV);
+    }
+
+    // Handle Form Submission
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+      const responseData = {
+        physical_feeling: formData.get('physicalFeeling'),
+        material_quality: formData.get('materialQuality'),
+        emotional_feeling: formData.get('emotionalFeeling'),
+        favorite_item: formData.get('favoriteItem'),
+        favorite_reason: formData.get('favoriteReason')
+      };
+
+      const submitButton = e.target.querySelector('.submit-button');
+      const buttonText = submitButton.querySelector('.button-text');
+
+      // Show loading state
+      submitButton.disabled = true;
+      submitButton.classList.add('loading');
+      buttonText.innerHTML = '<span class="button-loader"></span> Submitting...';
+
+      try {
+        let success = false;
+
+        // Try online submission first
+        if (navigator.onLine && supabase) {
+          const { error } = await supabase
+            .from('clothing_responses')
+            .insert([responseData]);
+
+          success = !error;
+          if (error) throw error;
+        }
+
+        // Save offline as backup or if online failed
+        if (!success || !navigator.onLine) {
+          success = await saveResponseOffline(responseData);
+        }
+
+        if (success) {
+          showMessage(
+            navigator.onLine
+              ? 'Thank you! Your response has been submitted successfully.'
+              : 'Response saved offline. It will sync when you\'re back online.',
+            'success'
+          );
+          e.target.reset();
+        } else {
+          throw new Error('Failed to save response');
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+
+        // Try to save offline as last resort
+        const offlineSaved = await saveResponseOffline(responseData);
+        if (offlineSaved) {
+          showMessage('Response saved offline. It will sync when connection is restored.', 'success');
+          e.target.reset();
+        } else {
+          showMessage('Sorry, there was an error submitting your response. Please try again.', 'error');
+        }
+      } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+        buttonText.textContent = 'Share Your Experience';
+      }
+    }
+
+    // Handle Login
+    async function handleLogin(e) {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+      const username = formData.get('username');
+      const password = formData.get('password');
+
+      const submitButton = e.target.querySelector('.submit-button');
+      const buttonText = submitButton.querySelector('.button-text');
+      const errorDiv = document.getElementById('loginError');
+
+      // Show loading state
+      submitButton.disabled = true;
+      submitButton.classList.add('loading');
+      buttonText.innerHTML = '<span class="button-loader"></span> Checking...';
+      errorDiv.classList.add('hidden');
+
+      try {
+        // Simple credential check
+        if (username === 'moderator' && password === 'thecatsatonthemat2025') {
+          isLoggedIn = true;
+          sessionStorage.setItem('clothingAppAuth', 'true');
+          document.getElementById('loginModal').classList.add('hidden');
+          showResponsesView();
+          e.target.reset();
+        } else {
+          throw new Error('Invalid credentials');
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Invalid username or password. Please try again.';
+        errorDiv.classList.remove('hidden');
+      } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+        buttonText.textContent = 'Access Dashboard';
+      }
+    }
+
+    // Show/Hide Views
+    function showFormView() {
+      document.getElementById('formSection').classList.remove('hidden');
+      document.getElementById('responsesSection').classList.add('hidden');
+      document.getElementById('toggleView').textContent = 'View Responses';
+    }
+
+    function showResponsesView() {
+      document.getElementById('formSection').classList.add('hidden');
+      document.getElementById('responsesSection').classList.remove('hidden');
+      document.getElementById('toggleView').textContent = 'Back to Form';
+      loadResponseData();
+    }
+
+    // Dashboard Tab Switching
+    function switchDashboardTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+      // Show/hide content
+      document.getElementById('visualizationTab').classList.toggle('hidden', tabName !== 'visualization');
+      document.getElementById('responsesTab').classList.toggle('hidden', tabName !== 'responses');
+
+      // Load data for active tab
+      if (tabName === 'visualization') {
+        loadResponseData();
+      } else if (tabName === 'responses') {
+        loadAllResponses();
+      }
+    }
+
+    // Load Response Data for Visualization
+    async function loadResponseData() {
+      if (!isLoggedIn) return;
+
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const noDataMessage = document.getElementById('noDataMessage');
+      const chartContainer = document.getElementById('chartContainer');
+
+      loadingIndicator.classList.remove('hidden');
+      noDataMessage.classList.add('hidden');
+      chartContainer.classList.add('hidden');
+
+      try {
+        let responses = [];
+
+        if (supabase) {
+          const { data, error } = await supabase
+            .from('clothing_responses')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          responses = data || [];
+        }
+
+        loadingIndicator.classList.add('hidden');
+
+        if (responses.length === 0) {
+          noDataMessage.classList.remove('hidden');
+        } else {
+          chartContainer.classList.remove('hidden');
+          createD3Sunburst(responses);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        loadingIndicator.classList.add('hidden');
+        noDataMessage.classList.remove('hidden');
+      }
+    }
+
+    // Load All Responses for List View
+    async function loadAllResponses() {
+      if (!isLoggedIn) return;
+
+      const loadingIndicator = document.getElementById('responsesLoadingIndicator');
+      const noDataMessage = document.getElementById('responsesNoDataMessage');
+      const dataContainer = document.getElementById('dataContainer');
+
+      loadingIndicator.classList.remove('hidden');
+      noDataMessage.classList.add('hidden');
+      dataContainer.classList.add('hidden');
+
+      try {
+        let responses = [];
+
+        if (supabase) {
+          const { data, error } = await supabase
+            .from('clothing_responses')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          responses = data || [];
+        }
+
+        loadingIndicator.classList.add('hidden');
+
+        if (responses.length === 0) {
+          noDataMessage.classList.remove('hidden');
+        } else {
+          dataContainer.classList.remove('hidden');
+          displayResponses(responses);
+        }
+      } catch (error) {
+        console.error('Error loading responses:', error);
+        loadingIndicator.classList.add('hidden');
+        noDataMessage.classList.remove('hidden');
+      }
+    }
+
+    // Display Responses in List
+    function displayResponses(responses) {
+      const responsesList = document.getElementById('responsesList');
+      responsesList.innerHTML = '';
+
+      responses.forEach(response => {
+        const responseCard = document.createElement('div');
+        responseCard.className = 'response-card';
+
+        const date = new Date(response.created_at).toLocaleString();
+
+        responseCard.innerHTML = `
+          <div class="response-header">
+            <h3 class="response-title">Response #${response.id}</h3>
+            <span class="response-date">${date}</span>
+          </div>
+          <div class="response-content">
+            <div class="response-item">
+              <strong>Physical Feeling:</strong>
+              <p>${response.physical_feeling}</p>
+            </div>
+            <div class="response-item">
+              <strong>Material Quality:</strong>
+              <p><span class="material-badge material-${response.material_quality.toLowerCase().replace(' ', '-')}">${response.material_quality}</span></p>
+            </div>
+            <div class="response-item">
+              <strong>Emotional Feeling:</strong>
+              <p>${response.emotional_feeling}</p>
+            </div>
+            <div class="response-item">
+              <strong>Favorite Item:</strong>
+              <p>${response.favorite_item}</p>
+            </div>
+            <div class="response-item">
+              <strong>Why Favorite:</strong>
+              <p>${response.favorite_reason}</p>
+            </div>
+          </div>
+        `;
+
+        responsesList.appendChild(responseCard);
+      });
+    }
+
+    // D3.js Sunburst Chart Creation
+    function createD3Sunburst(responses) {
+      // Clear previous chart
+      d3.select("#sunburstContainer").selectAll("*").remove();
+
+      // Color palette from oyster wheel
+      const colors = {
+        FEEL: ['#4a90e2', '#357abd', '#2c5aa0'],
+        MATERIAL: ['#f5a623', '#e8931e', '#d07c18'],
+        FAVOURITE: ['#7ed321', '#6bb71c', '#5a9b17']
+      };
+
+      // Process data into hierarchical structure
+      const processedData = processResponsesForSunburst(responses);
+
+      // Set dimensions
+      const width = 600;
+      const height = 600;
+      const radius = Math.min(width, height) / 2;
+
+      // Create SVG
+      const svg = d3.select("#sunburstContainer")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${width / 2},${height / 2})`);
+
+      // Create partition layout
+      const partition = d3.partition()
+        .size([2 * Math.PI, radius]);
+
+      // Create hierarchy
+      const root = d3.hierarchy(processedData)
+        .sum(d => d.value || 0);
+
+      partition(root);
+
+      // Create arcs
+      const arc = d3.arc()
+        .startAngle(d => d.x0)
+        .endAngle(d => d.x1)
+        .innerRadius(d => d.y0)
+        .outerRadius(d => d.y1);
+
+      // Color function
+      const color = (d) => {
+        if (d.depth === 0) return '#ffffff';
+        if (d.depth === 1) {
+          const sectionColors = colors[d.data.name] || ['#666666'];
+          return sectionColors[0];
+        }
+        if (d.depth === 2) {
+          const parent = d.parent.data.name;
+          const sectionColors = colors[parent] || ['#666666'];
+          const index = d.parent.children.indexOf(d) % sectionColors.length;
+          return sectionColors[index];
+        }
+        if (d.depth === 3) {
+          const grandparent = d.parent.parent.data.name;
+          const sectionColors = colors[grandparent] || ['#666666'];
+          const index = Math.floor(d.parent.children.indexOf(d) / 2) % sectionColors.length;
+          return d3.color(sectionColors[index]).darker(0.3);
+        }
+        return '#cccccc';
+      };
+
+      // Draw arcs
+      const path = svg.selectAll("path")
+        .data(root.descendants())
+        .enter().append("path")
+        .attr("d", arc)
+        .attr("fill", color)
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", 2);
+
+      // Add text labels
+      const text = svg.selectAll("text")
+        .data(root.descendants().filter(d => d.depth > 0))
+        .enter().append("text")
+        .attr("transform", function (d) {
+          const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
+          const y = (d.y0 + d.y1) / 2;
+          return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+        })
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "middle")
+        .style("font-family", "Inter, sans-serif")
+        .style("font-weight", "300")
+        .style("font-size", d => {
+          const arcLength = (d.x1 - d.x0) * (d.y0 + d.y1) / 2;
+          return Math.min(14, arcLength / 8) + "px";
+        })
+        .style("fill", d => {
+          const bgColor = color(d);
+          const brightness = d3.color(bgColor) ? d3.color(bgColor).displayable() ?
+            d3.color(bgColor).rgb().r * 0.299 + d3.color(bgColor).rgb().g * 0.587 + d3.color(bgColor).rgb().b * 0.114 : 128 : 128;
+          return brightness > 128 ? "#000000" : "#ffffff";
+        })
+        .text(d => {
+          const arcLength = (d.x1 - d.x0) * (d.y0 + d.y1) / 2;
+          const text = d.data.name;
+          const maxLength = Math.floor(arcLength / 8);
+          return text.length > maxLength ? text.substring(0, maxLength - 3) + "..." : text;
+        });
+
+      // Add center text
+      svg.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .style("font-family", "Inter, sans-serif")
+        .style("font-weight", "300")
+        .style("font-size", "14px")
+        .style("fill", "#333")
+        .text("CLOTHING");
+
+      svg.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "1.5em")
+        .style("font-family", "Inter, sans-serif")
+        .style("font-weight", "300")
+        .style("font-size", "14px")
+        .style("fill", "#333")
+        .text("EXPERIENCES");
+    }
+
+    // Process responses for sunburst structure
+    function processResponsesForSunburst(responses) {
+      const categorizeText = (text, categories) => {
+        const lowerText = text.toLowerCase();
+        for (const [category, keywords] of Object.entries(categories)) {
+          if (keywords.some(keyword => lowerText.includes(keyword))) {
+            return category;
+          }
+        }
+        return 'Other';
+      };
+
+      const physicalCategories = {
+        'Comfortable': ['comfortable', 'cozy', 'soft', 'smooth', 'pleasant'],
+        'Stylish': ['stylish', 'fashionable', 'trendy', 'chic', 'elegant'],
+        'Restrictive': ['tight', 'restrictive', 'constraining', 'stiff'],
+        'Textured': ['rough', 'scratchy', 'textured', 'bumpy']
+      };
+
+      const emotionalCategories = {
+        'Confident': ['confident', 'empowered', 'strong', 'bold'],
+        'Happy': ['happy', 'joyful', 'cheerful', 'upbeat', 'good'],
+        'Relaxed': ['relaxed', 'calm', 'peaceful', 'comfortable'],
+        'Stylish': ['stylish', 'fashionable', 'put-together']
+      };
+
+      const itemCategories = {
+        'Tops': ['shirt', 'sweater', 'jacket', 'top', 'blouse'],
+        'Bottoms': ['pants', 'jeans', 'skirt', 'shorts', 'trousers'],
+        'Footwear': ['shoes', 'boots', 'sneakers', 'heels'],
+        'Accessories': ['hat', 'scarf', 'jewelry', 'watch', 'bag']
+      };
+
+      // Count categories
+      const counts = {
+        FEEL: { Physical: {}, Emotional: {} },
+        MATERIAL: { Great: 0, Okay: 0, 'Not Great': 0 },
+        FAVOURITE: { Items: {}, Reasons: {} }
+      };
+
+      responses.forEach(response => {
+        // Physical feelings
+        const physicalCat = categorizeText(response.physical_feeling, physicalCategories);
+        counts.FEEL.Physical[physicalCat] = (counts.FEEL.Physical[physicalCat] || 0) + 1;
+
+        // Emotional feelings
+        const emotionalCat = categorizeText(response.emotional_feeling, emotionalCategories);
+        counts.FEEL.Emotional[emotionalCat] = (counts.FEEL.Emotional[emotionalCat] || 0) + 1;
+
+        // Material quality
+        counts.MATERIAL[response.material_quality] = (counts.MATERIAL[response.material_quality] || 0) + 1;
+
+        // Favorite items
+        const itemCat = categorizeText(response.favorite_item, itemCategories);
+        counts.FAVOURITE.Items[itemCat] = (counts.FAVOURITE.Items[itemCat] || 0) + 1;
+
+        // Favorite reasons (simplified categories)
+        const reasonCat = response.favorite_reason.length > 50 ? 'Detailed' : 'Simple';
+        counts.FAVOURITE.Reasons[reasonCat] = (counts.FAVOURITE.Reasons[reasonCat] || 0) + 1;
+      });
+
+      // Build hierarchy
+      return {
+        name: "root",
+        children: [
+          {
+            name: "FEEL",
+            children: [
+              {
+                name: "Physical",
+                children: Object.entries(counts.FEEL.Physical).map(([key, value]) => ({
+                  name: key,
+                  value: value
+                }))
+              },
+              {
+                name: "Emotional",
+                children: Object.entries(counts.FEEL.Emotional).map(([key, value]) => ({
+                  name: key,
+                  value: value
+                }))
+              }
+            ]
+          },
+          {
+            name: "MATERIAL",
+            children: Object.entries(counts.MATERIAL).map(([key, value]) => ({
+              name: key,
+              value: value
+            }))
+          },
+          {
+            name: "FAVOURITE",
+            children: [
+              {
+                name: "Items",
+                children: Object.entries(counts.FAVOURITE.Items).map(([key, value]) => ({
+                  name: key,
+                  value: value
+                }))
+              },
+              {
+                name: "Reasons",
+                children: Object.entries(counts.FAVOURITE.Reasons).map(([key, value]) => ({
+                  name: key,
+                  value: value
+                }))
+              }
+            ]
+          }
+        ]
+      };
+    }
+
+    // Export to CSV
+    function exportToCSV() {
+      if (!isLoggedIn) return;
+
+      // This would typically fetch all data and create CSV
+      console.log('Export functionality would be implemented here');
+    }
+
+    // Show Messages
+    function showMessage(message, type) {
+      const messageContainer = document.getElementById('messageContainer');
+      messageContainer.innerHTML = `<div class="${type === 'success' ? 'success-message' : 'error-message-global'}">${message}</div>`;
+      messageContainer.classList.remove('hidden');
+
+      setTimeout(() => {
+        messageContainer.classList.add('hidden');
+      }, 5000);
+    }
+
+    // Listen for service worker messages
+    navigator.serviceWorker?.addEventListener('message', (event) => {
+      if (event.data.type === 'BACKGROUND_SYNC' && event.data.action === 'syncOfflineData') {
+        syncOfflineData();
+      }
+    });
   </script>
 </body>
 
