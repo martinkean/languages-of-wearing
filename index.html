@@ -428,7 +428,7 @@
         const db = await initDB();
         const transaction = db.transaction(['responses'], 'readwrite');
         const store = transaction.objectStore('responses');
-        const unsynced = await store.getAll();
+        const unsynced = (await store.getAll()) || [];
 
         const toSync = unsynced.filter(item => !item.synced);
         if (toSync.length === 0) return;
