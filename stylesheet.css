@@ -370,6 +370,7 @@ Application header with title and navigation
   font-weight: var(--font-weight-bold);
   margin-bottom: var(--spacing-3);
   letter-spacing: -0.025em;
+  color: var(--color-primary-subtle);
 }
 
 .app-subtitle {

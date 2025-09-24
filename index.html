@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Language of Wearing</title>
+  <title>The Languages of Wearing</title>
 
   <!-- PWA Configuration -->
   <link rel="manifest" href="/manifest.json">
@@ -14,10 +14,8 @@
   <meta name="apple-mobile-web-app-title" content="Language of Wearing">
 
   <!-- Favicon and Icons -->
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👗</text></svg>">
-  <link rel="apple-touch-icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%236366f1'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='white'>👗</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" type="image/svg+xml" href="favicon.svg">
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -39,7 +37,7 @@
   <div id="app">
     <!-- App Header -->
     <header class="app-header">
-      <h1 class="app-title">The Language of Wearing</h1>
+      <h1 class="app-title">The Languages of Wearing</h1>
       <p class="app-subtitle">Share your clothing experiences and discover how fabric makes us feel</p>
     </header>
 
@@ -428,9 +426,15 @@
         const db = await initDB();
         const transaction = db.transaction(['responses'], 'readwrite');
         const store = transaction.objectStore('responses');
-        const unsynced = (await store.getAll()) || [];
 
-        const toSync = unsynced.filter(item => !item.synced);
+        // Properly handle IndexedDB getAll() request
+        const allResponses = await new Promise((resolve, reject) => {
+          const request = store.getAll();
+          request.onsuccess = () => resolve(request.result || []);
+          request.onerror = () => reject(request.error);
+        });
+
+        const toSync = allResponses.filter(item => !item.synced);
         if (toSync.length === 0) return;
 
         let syncedCount = 0;
