@@ -15,7 +15,7 @@
   <meta name="description" content="Collect and analyze clothing experiences through interactive forms">
   <meta name="keywords" content="fashion, clothing, experience, survey, analytics">
 
-  <title>The Language of Wearing</title>
+  <title>The Languages of Wearing</title>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
@@ -30,6 +30,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Supabase JavaScript Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Supabase Configuration -->
   <script src="config.js"></script>
@@ -386,39 +389,31 @@
 
     // Supabase Integration (Mock Implementation)
     const SupabaseClient = {
-      // Initialize connection (in real app, you'd use the actual Supabase client)
+      supabase: null,
+
+      // Initialize connection with real Supabase client
       init() {
-        // In a real implementation, you would:
-        // return supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        console.log('Supabase client initialized');
+        this.supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        console.log('Real Supabase client initialized');
         return this;
       },
 
       // Submit response to database
       async submitResponse(responseData) {
         try {
-          // Mock delay to simulate network request
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          const { data, error } = await this.supabase
+            .from(CONFIG.TABLE_NAME)
+            .insert([responseData])
+            .select();
 
-          // In real implementation:
-          // const { data, error } = await supabase
-          //   .from(CONFIG.TABLE_NAME)
-          //   .insert([responseData]);
+          if (error) {
+            console.error('Supabase insert error:', error);
+            return { data: null, error: error.message };
+          }
 
-          // Mock success - in production, store in actual Supabase
-          const mockResponse = {
-            id: Date.now(),
-            ...responseData,
-            created_at: new Date().toISOString()
-          };
-
-          // Store in localStorage for demo purposes
-          const existingData = JSON.parse(localStorage.getItem('clothingResponses') || '[]');
-          existingData.push(mockResponse);
-          localStorage.setItem('clothingResponses', JSON.stringify(existingData));
-
-          return { data: mockResponse, error: null };
+          return { data: data[0], error: null };
         } catch (error) {
+          console.error('Submit response error:', error);
           return { data: null, error: error.message };
         }
       },
@@ -426,19 +421,19 @@
       // Fetch all responses
       async getResponses() {
         try {
-          // Mock delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data, error } = await this.supabase
+            .from(CONFIG.TABLE_NAME)
+            .select('*')
+            .order('created_at', { ascending: false });
 
-          // In real implementation:
-          // const { data, error } = await supabase
-          //   .from(CONFIG.TABLE_NAME)
-          //   .select('*')
-          //   .order('created_at', { ascending: false });
+          if (error) {
+            console.error('Supabase select error:', error);
+            return { data: null, error: error.message };
+          }
 
-          // Get from localStorage for demo
-          const data = JSON.parse(localStorage.getItem('clothingResponses') || '[]');
-          return { data: data.reverse(), error: null };
+          return { data, error: null };
         } catch (error) {
+          console.error('Get responses error:', error);
           return { data: null, error: error.message };
         }
       }

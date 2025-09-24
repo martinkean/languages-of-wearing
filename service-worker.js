@@ -130,7 +130,9 @@ async function networkFirstStrategy(request) {
     // If successful, cache the response for future offline access
     if (networkResponse.ok) {
       const cache = await caches.open(DYNAMIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      // Clone the response before using it
+      const responseClone = networkResponse.clone();
+      cache.put(request, responseClone);
     }
     
     return networkResponse;
@@ -168,7 +170,9 @@ async function cacheFirstStrategy(request) {
     // Cache the response if successful
     if (networkResponse.ok) {
       const cache = await caches.open(STATIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      // Clone the response before using it
+      const responseClone = networkResponse.clone();
+      cache.put(request, responseClone);
     }
     
     return networkResponse;
@@ -186,8 +190,11 @@ async function staleWhileRevalidateStrategy(request) {
     .then((response) => {
       // Update cache with fresh response
       if (response.ok) {
-        const cache = caches.open(DYNAMIC_CACHE_NAME);
-        cache.then((c) => c.put(request, response.clone()));
+        // Clone response before caching
+        const responseClone = response.clone();
+        caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+          cache.put(request, responseClone);
+        });
       }
       return response;
     })
