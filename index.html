@@ -781,17 +781,20 @@
         const height = 600;
         const radius = Math.min(width, height) / 2;
 
-        // Color scale
-        const color = d3.scaleOrdinal()
-          .domain(['FEEL', 'MATERIAL', 'FAVOURITE'])
-          .range(['#60a5fa', '#f87171', '#34d399']);
+        // Color palette from oyster wheel
+        const colorPalette = {
+          'FEEL': ['#4a90e2', '#357abd', '#2c5aa0', '#1e4a8c'],
+          'MATERIAL': ['#f5a623', '#e8931e', '#d07c18', '#b86914'],
+          'FAVOURITE': ['#7ed321', '#6bb71c', '#5a9b17', '#4a7c13']
+        };
 
         // Create SVG
         const svg = d3.select(Elements.sunburstContainer)
           .append('svg')
           .attr('width', width)
           .attr('height', height)
-          .style('font', '12px sans-serif');
+          .style('font-family', 'Inter, sans-serif')
+          .style('font-weight', '300');
 
         const g = svg.append('g')
           .attr('transform', `translate(${width / 2},${height / 2})`);
@@ -814,67 +817,87 @@
           .innerRadius(d => d.y0)
           .outerRadius(d => d.y1);
 
+        // Text arc for labels
+        const textArc = d3.arc()
+          .startAngle(d => d.x0)
+          .endAngle(d => d.x1)
+          .innerRadius(d => (d.y0 + d.y1) / 2)
+          .outerRadius(d => (d.y0 + d.y1) / 2);
+
         // Add paths
-        g.selectAll('path')
+        const paths = g.selectAll('path')
           .data(root.descendants())
           .join('path')
           .attr('d', arc)
           .attr('fill', d => {
             if (d.depth === 0) return '#ffffff';
-            if (d.depth === 1) return color(d.data.name);
-            return d3.color(color(d.ancestors()[1].data.name)).darker(d.depth - 1);
+            const mainCategory = d.ancestors().find(a => a.depth === 1);
+            if (!mainCategory) return '#cccccc';
+            const colors = colorPalette[mainCategory.data.name] || ['#cccccc'];
+            return colors[Math.min(d.depth - 1, colors.length - 1)] || '#cccccc';
           })
           .attr('stroke', '#ffffff')
-          .attr('stroke-width', 2)
-          .style('cursor', 'pointer')
-          .on('mouseover', function (event, d) {
-            if (d.depth > 0) {
-              d3.select(this).attr('opacity', 0.8);
+          .attr('stroke-width', 2);
 
-              // Show tooltip
-              const tooltip = g.append('text')
-                .attr('class', 'tooltip')
-                .attr('text-anchor', 'middle')
-                .attr('y', -10)
-                .style('font-weight', 'bold')
-                .style('font-size', '14px')
-                .text(d.data.name);
-
-              if (d.data.value) {
-                g.append('text')
-                  .attr('class', 'tooltip')
-                  .attr('text-anchor', 'middle')
-                  .attr('y', 10)
-                  .style('font-size', '12px')
-                  .text(`Count: ${d.data.value}`);
-              }
-            }
+        // Add text labels within rings
+        g.selectAll('text.ring-label')
+          .data(root.descendants().filter(d => d.depth > 0 && (d.x1 - d.x0) > 0.1))
+          .join('text')
+          .attr('class', 'ring-label')
+          .attr('transform', d => {
+            const angle = (d.x0 + d.x1) / 2;
+            const radius = (d.y0 + d.y1) / 2;
+            const x = Math.sin(angle) * radius;
+            const y = -Math.cos(angle) * radius;
+            const rotation = angle * 180 / Math.PI - 90;
+            return `translate(${x},${y}) rotate(${rotation > 90 ? rotation + 180 : rotation})`;
           })
-          .on('mouseout', function (event, d) {
-            d3.select(this).attr('opacity', 1);
-            g.selectAll('.tooltip').remove();
+          .style('text-anchor', 'middle')
+          .style('font-family', 'Inter, sans-serif')
+          .style('font-weight', '300')
+          .style('font-size', d => {
+            const arcLength = (d.x1 - d.x0) * (d.y0 + d.y1) / 2;
+            return Math.min(12, arcLength / 8) + 'px';
+          })
+          .style('fill', d => {
+            // Use white text on dark colors, black on light colors
+            const mainCategory = d.ancestors().find(a => a.depth === 1);
+            if (!mainCategory) return '#000000';
+            const colors = colorPalette[mainCategory.data.name] || ['#cccccc'];
+            const bgColor = colors[Math.min(d.depth - 1, colors.length - 1)] || '#cccccc';
+            // Simple brightness check
+            return ['#7ed321', '#f5a623'].includes(bgColor) ? '#000000' : '#ffffff';
+          })
+          .text(d => {
+            const text = d.data.name;
+            const maxLength = Math.floor((d.x1 - d.x0) * 20);
+            return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
           });
 
         // Add center text
         g.append('text')
           .attr('text-anchor', 'middle')
           .attr('y', -10)
+          .style('font-family', 'Inter, sans-serif')
+          .style('font-weight', '300')
           .style('font-size', '16px')
-          .style('font-weight', 'bold')
+          .style('fill', '#000000')
           .text('CLOTHING');
 
         g.append('text')
           .attr('text-anchor', 'middle')
           .attr('y', 10)
+          .style('font-family', 'Inter, sans-serif')
+          .style('font-weight', '300')
           .style('font-size', '16px')
-          .style('font-weight', 'bold')
+          .style('fill', '#000000')
           .text('EXPERIENCES');
 
         // Add legend
         const legendData = [
-          { name: 'FEEL', color: '#60a5fa' },
-          { name: 'MATERIAL', color: '#f87171' },
-          { name: 'FAVOURITE', color: '#34d399' }
+          { name: 'FEEL', color: '#4a90e2' },
+          { name: 'MATERIAL', color: '#f5a623' },
+          { name: 'FAVOURITE', color: '#7ed321' }
         ];
 
         const legend = Elements.chartLegend;
