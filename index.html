@@ -36,6 +36,9 @@
 
   <!-- Supabase Configuration -->
   <script src="config.js"></script>
+
+  <!-- D3.js for Sunburst Charts -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
 <body>
@@ -50,7 +53,7 @@
     <!-- Navigation for Admin Toggle -->
     <nav class="app-nav">
       <button id="toggleViewBtn" class="toggle-button" aria-label="Switch between user and admin view">
-        Switch to Responses View
+        View Responses
       </button>
     </nav>
 
@@ -150,12 +153,46 @@
       </section>
     </main>
 
-    <!-- Admin Dashboard View -->
+    <!-- Login Screen -->
+    <main id="loginView" class="main-content hidden">
+      <section class="form-section">
+        <h2 class="section-title">Login Required</h2>
+        <p style="text-align: center; color: var(--color-gray-600); margin-bottom: var(--spacing-6);">
+          Please enter your credentials to access the responses dashboard.
+        </p>
+        <form id="loginForm" class="clothing-form" style="max-width: 400px; margin: 0 auto;">
+          <div class="question-container">
+            <label for="loginUsername" class="question-label">Username</label>
+            <input type="text" id="loginUsername" class="text-input" placeholder="Enter username" required
+              autocomplete="username">
+          </div>
+          <div class="question-container">
+            <label for="loginPassword" class="question-label">Password</label>
+            <input type="password" id="loginPassword" class="text-input" placeholder="Enter password" required
+              autocomplete="current-password">
+          </div>
+          <div class="submit-section">
+            <button type="submit" class="submit-button">
+              <span class="button-text">Login</span>
+            </button>
+          </div>
+        </form>
+        <div id="loginError" class="error-message-global hidden"
+          style="max-width: 400px; margin: var(--spacing-4) auto 0;">
+          <strong>Login Failed:</strong> <span id="loginErrorText">Invalid username or password.</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Responses Dashboard View -->
     <main id="adminView" class="main-content hidden">
       <section class="admin-section">
         <header class="admin-header">
-          <h2 class="section-title">Admin Dashboard</h2>
+          <h2 class="section-title">Responses Dashboard</h2>
           <div class="admin-controls">
+            <button id="logoutBtn" class="control-button">
+              Logout
+            </button>
             <button id="refreshDataBtn" class="control-button">
               Refresh Data
             </button>
@@ -171,7 +208,7 @@
             All Responses
           </button>
           <button id="showChartViewBtn" class="nav-tab" data-view="chart">
-            Material Quality Chart
+            Response Visualization
           </button>
         </nav>
 
@@ -191,11 +228,11 @@
         <!-- Chart View -->
         <section id="chartView" class="dashboard-view hidden">
           <div class="chart-container">
-            <h3 class="chart-title">Material Quality Distribution</h3>
-            <div id="materialChart" class="chart-area">
-              <div class="chart-bars" id="chartBars"></div>
+            <h3 class="chart-title">Clothing Experience Wheel</h3>
+            <div id="sunburstChart" class="chart-area" style="text-align: center;">
+              <div id="sunburstContainer"></div>
             </div>
-            <div id="chartStats" class="chart-stats"></div>
+            <div id="chartLegend" class="chart-stats"></div>
           </div>
         </section>
       </section>
@@ -209,7 +246,11 @@
       // Supabase credentials loaded from config.js
       SUPABASE_URL: window.SUPABASE_CONFIG?.SUPABASE_URL || '',
       SUPABASE_ANON_KEY: window.SUPABASE_CONFIG?.SUPABASE_ANON_KEY || '',
-      TABLE_NAME: 'clothing_responses'
+      TABLE_NAME: 'clothing_responses',
+      LOGIN_CREDENTIALS: {
+        username: 'moderator',
+        password: 'thecatsatonthemat2025'
+      }
     };
 
     // Validate configuration on app start
@@ -241,6 +282,7 @@
     // Global State Management
     const AppState = {
       currentView: 'user',
+      isLoggedIn: false,
       responses: [],
       isLoading: false
     };
@@ -249,6 +291,7 @@
     const Elements = {
       // Views
       userView: document.getElementById('userView'),
+      loginView: document.getElementById('loginView'),
       adminView: document.getElementById('adminView'),
       toggleViewBtn: document.getElementById('toggleViewBtn'),
 
@@ -260,6 +303,14 @@
       errorMessage: document.getElementById('errorMessage'),
       errorText: document.getElementById('errorText'),
 
+      // Login
+      loginForm: document.getElementById('loginForm'),
+      loginUsername: document.getElementById('loginUsername'),
+      loginPassword: document.getElementById('loginPassword'),
+      loginError: document.getElementById('loginError'),
+      loginErrorText: document.getElementById('loginErrorText'),
+      logoutBtn: document.getElementById('logoutBtn'),
+
       // Admin Dashboard
       refreshDataBtn: document.getElementById('refreshDataBtn'),
       exportDataBtn: document.getElementById('exportDataBtn'),
@@ -270,8 +321,8 @@
       responsesList: document.getElementById('responsesList'),
       loadingIndicator: document.getElementById('loadingIndicator'),
       noDataMessage: document.getElementById('noDataMessage'),
-      chartBars: document.getElementById('chartBars'),
-      chartStats: document.getElementById('chartStats')
+      sunburstContainer: document.getElementById('sunburstContainer'),
+      chartLegend: document.getElementById('chartLegend')
     };
 
     // Utility Functions
@@ -441,21 +492,71 @@
 
     // UI State Management
     const UIManager = {
+      // Check login status on load
+      checkLoginStatus() {
+        const loggedIn = sessionStorage.getItem('moderator_logged_in');
+        AppState.isLoggedIn = loggedIn === 'true';
+        return AppState.isLoggedIn;
+      },
+
+      // Handle login
+      async handleLogin(username, password) {
+        if (username === CONFIG.LOGIN_CREDENTIALS.username &&
+          password === CONFIG.LOGIN_CREDENTIALS.password) {
+          AppState.isLoggedIn = true;
+          sessionStorage.setItem('moderator_logged_in', 'true');
+          this.showAdminView();
+          return true;
+        }
+        return false;
+      },
+
+      // Handle logout
+      handleLogout() {
+        AppState.isLoggedIn = false;
+        sessionStorage.removeItem('moderator_logged_in');
+        this.showUserView();
+      },
+
+      // Show user view
+      showUserView() {
+        Elements.userView.classList.remove('hidden');
+        Elements.loginView.classList.add('hidden');
+        Elements.adminView.classList.add('hidden');
+        Elements.toggleViewBtn.textContent = 'View Responses';
+        AppState.currentView = 'user';
+      },
+
+      // Show login view
+      showLoginView() {
+        Elements.userView.classList.add('hidden');
+        Elements.loginView.classList.remove('hidden');
+        Elements.adminView.classList.add('hidden');
+        Elements.toggleViewBtn.textContent = 'Back to Form';
+        AppState.currentView = 'login';
+      },
+
+      // Show admin view
+      showAdminView() {
+        Elements.userView.classList.add('hidden');
+        Elements.loginView.classList.add('hidden');
+        Elements.adminView.classList.remove('hidden');
+        Elements.toggleViewBtn.textContent = 'Back to Form';
+        AppState.currentView = 'admin';
+        this.loadAdminData();
+      },
+
       // Toggle between user and admin views
       toggleView() {
-        const isUserView = AppState.currentView === 'user';
-
-        if (isUserView) {
-          Elements.userView.classList.add('hidden');
-          Elements.adminView.classList.remove('hidden');
-          Elements.toggleViewBtn.textContent = 'Switch to User View';
-          AppState.currentView = 'admin';
-          this.loadAdminData();
+        if (AppState.currentView === 'user') {
+          // Check if logged in
+          if (this.checkLoginStatus()) {
+            this.showAdminView();
+          } else {
+            this.showLoginView();
+          }
         } else {
-          Elements.adminView.classList.add('hidden');
-          Elements.userView.classList.remove('hidden');
-          Elements.toggleViewBtn.textContent = 'Switch to Admin View';
-          AppState.currentView = 'user';
+          this.showUserView();
         }
       },
 
@@ -524,7 +625,7 @@
           Elements.noDataMessage.classList.remove('hidden');
         } else {
           this.renderResponsesList();
-          this.renderMaterialChart();
+          this.renderSunburstChart();
         }
       },
 
@@ -565,48 +666,227 @@
         Elements.responsesList.classList.remove('hidden');
       },
 
-      // Render material quality chart
-      renderMaterialChart() {
-        const materialCounts = AppState.responses.reduce((acc, response) => {
-          acc[response.material_quality] = (acc[response.material_quality] || 0) + 1;
-          return acc;
-        }, {});
+      // Render sunburst chart using D3.js
+      renderSunburstChart() {
+        if (!window.d3 || AppState.responses.length === 0) {
+          Elements.sunburstContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">No data available for visualization</p>';
+          return;
+        }
 
-        const total = AppState.responses.length;
-        const categories = ['Great', 'Okay', 'Not great'];
-        const maxCount = Math.max(...Object.values(materialCounts));
+        // Clear previous chart
+        Elements.sunburstContainer.innerHTML = '';
 
-        const barsHtml = categories.map(category => {
-          const count = materialCounts[category] || 0;
-          const percentage = total > 0 ? (count / total * 100).toFixed(1) : 0;
-          const height = maxCount > 0 ? (count / maxCount * 100) : 0;
+        // Process data for sunburst
+        const sunburstData = this.processSunburstData();
 
-          return `
-            <div class="chart-bar-container">
-              <div class="chart-bar chart-bar-${category.toLowerCase().replace(' ', '-')}" 
-                   style="height: ${height}%">
-                <span class="bar-count">${count}</span>
-              </div>
-              <div class="bar-label">${category}</div>
-              <div class="bar-percentage">${percentage}%</div>
-            </div>
-          `;
-        }).join('');
+        // Create D3 sunburst
+        this.createD3Sunburst(sunburstData);
+      },
 
-        Elements.chartBars.innerHTML = barsHtml;
+      // Process response data into sunburst structure
+      processSunburstData() {
+        const responses = AppState.responses;
 
-        const statsHtml = `
+        // Create hierarchical data structure
+        const root = {
+          name: "Clothing Experiences",
+          children: [
+            {
+              name: "FEEL",
+              children: [
+                {
+                  name: "Physical",
+                  children: this.categorizeTextResponses(responses.map(r => r.physical_feeling), 'physical')
+                },
+                {
+                  name: "Emotional",
+                  children: this.categorizeTextResponses(responses.map(r => r.emotional_feeling), 'emotional')
+                }
+              ]
+            },
+            {
+              name: "MATERIAL",
+              children: [
+                { name: "Great", value: responses.filter(r => r.material_quality === 'Great').length },
+                { name: "Okay", value: responses.filter(r => r.material_quality === 'Okay').length },
+                { name: "Not great", value: responses.filter(r => r.material_quality === 'Not great').length }
+              ]
+            },
+            {
+              name: "FAVOURITE",
+              children: [
+                {
+                  name: "Items",
+                  children: this.categorizeTextResponses(responses.map(r => r.favorite_item), 'items')
+                },
+                {
+                  name: "Reasons",
+                  children: this.categorizeTextResponses(responses.map(r => r.favorite_reason), 'reasons')
+                }
+              ]
+            }
+          ]
+        };
+
+        return root;
+      },
+
+      // Categorize text responses into groups
+      categorizeTextResponses(responses, type) {
+        const categories = {};
+
+        responses.forEach(response => {
+          if (!response) return;
+
+          // Simple keyword-based categorization
+          let category = 'Other';
+          const text = response.toLowerCase();
+
+          if (type === 'physical') {
+            if (text.includes('comfort') || text.includes('soft') || text.includes('cozy')) category = 'Comfortable';
+            else if (text.includes('rough') || text.includes('scratchy') || text.includes('irritating')) category = 'Uncomfortable';
+            else if (text.includes('warm') || text.includes('hot')) category = 'Warm';
+            else if (text.includes('cool') || text.includes('cold') || text.includes('breathable')) category = 'Cool';
+            else if (text.includes('tight') || text.includes('loose') || text.includes('fit')) category = 'Fit';
+          } else if (type === 'emotional') {
+            if (text.includes('confident') || text.includes('powerful') || text.includes('strong')) category = 'Confident';
+            else if (text.includes('happy') || text.includes('joy') || text.includes('good')) category = 'Happy';
+            else if (text.includes('comfortable') || text.includes('relaxed') || text.includes('calm')) category = 'Relaxed';
+            else if (text.includes('stylish') || text.includes('fashionable') || text.includes('trendy')) category = 'Stylish';
+            else if (text.includes('beautiful') || text.includes('pretty') || text.includes('attractive')) category = 'Beautiful';
+          } else if (type === 'items') {
+            if (text.includes('shirt') || text.includes('top') || text.includes('blouse')) category = 'Tops';
+            else if (text.includes('pants') || text.includes('jeans') || text.includes('trousers')) category = 'Bottoms';
+            else if (text.includes('dress') || text.includes('skirt')) category = 'Dresses';
+            else if (text.includes('jacket') || text.includes('coat') || text.includes('blazer')) category = 'Outerwear';
+            else if (text.includes('shoe') || text.includes('boot') || text.includes('sneaker')) category = 'Footwear';
+            else if (text.includes('hat') || text.includes('scarf') || text.includes('jewelry')) category = 'Accessories';
+          } else if (type === 'reasons') {
+            if (text.includes('comfort') || text.includes('comfortable')) category = 'Comfort';
+            else if (text.includes('style') || text.includes('fashionable') || text.includes('looks')) category = 'Style';
+            else if (text.includes('versatile') || text.includes('matches') || text.includes('goes with')) category = 'Versatile';
+            else if (text.includes('quality') || text.includes('durable') || text.includes('lasts')) category = 'Quality';
+            else if (text.includes('memory') || text.includes('sentimental') || text.includes('special')) category = 'Sentimental';
+          }
+
+          categories[category] = (categories[category] || 0) + 1;
+        });
+
+        return Object.entries(categories).map(([name, value]) => ({ name, value }));
+      },
+
+      // Create D3.js sunburst chart
+      createD3Sunburst(data) {
+        const width = 600;
+        const height = 600;
+        const radius = Math.min(width, height) / 2;
+
+        // Color scale
+        const color = d3.scaleOrdinal()
+          .domain(['FEEL', 'MATERIAL', 'FAVOURITE'])
+          .range(['#60a5fa', '#f87171', '#34d399']);
+
+        // Create SVG
+        const svg = d3.select(Elements.sunburstContainer)
+          .append('svg')
+          .attr('width', width)
+          .attr('height', height)
+          .style('font', '12px sans-serif');
+
+        const g = svg.append('g')
+          .attr('transform', `translate(${width / 2},${height / 2})`);
+
+        // Create hierarchy
+        const root = d3.hierarchy(data)
+          .sum(d => d.value)
+          .sort((a, b) => b.value - a.value);
+
+        // Create partition layout
+        const partition = d3.partition()
+          .size([2 * Math.PI, radius]);
+
+        partition(root);
+
+        // Create arc generator
+        const arc = d3.arc()
+          .startAngle(d => d.x0)
+          .endAngle(d => d.x1)
+          .innerRadius(d => d.y0)
+          .outerRadius(d => d.y1);
+
+        // Add paths
+        g.selectAll('path')
+          .data(root.descendants())
+          .join('path')
+          .attr('d', arc)
+          .attr('fill', d => {
+            if (d.depth === 0) return '#ffffff';
+            if (d.depth === 1) return color(d.data.name);
+            return d3.color(color(d.ancestors()[1].data.name)).darker(d.depth - 1);
+          })
+          .attr('stroke', '#ffffff')
+          .attr('stroke-width', 2)
+          .style('cursor', 'pointer')
+          .on('mouseover', function (event, d) {
+            if (d.depth > 0) {
+              d3.select(this).attr('opacity', 0.8);
+
+              // Show tooltip
+              const tooltip = g.append('text')
+                .attr('class', 'tooltip')
+                .attr('text-anchor', 'middle')
+                .attr('y', -10)
+                .style('font-weight', 'bold')
+                .style('font-size', '14px')
+                .text(d.data.name);
+
+              if (d.data.value) {
+                g.append('text')
+                  .attr('class', 'tooltip')
+                  .attr('text-anchor', 'middle')
+                  .attr('y', 10)
+                  .style('font-size', '12px')
+                  .text(`Count: ${d.data.value}`);
+              }
+            }
+          })
+          .on('mouseout', function (event, d) {
+            d3.select(this).attr('opacity', 1);
+            g.selectAll('.tooltip').remove();
+          });
+
+        // Add center text
+        g.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('y', -10)
+          .style('font-size', '16px')
+          .style('font-weight', 'bold')
+          .text('CLOTHING');
+
+        g.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('y', 10)
+          .style('font-size', '16px')
+          .style('font-weight', 'bold')
+          .text('EXPERIENCES');
+
+        // Add legend
+        const legendData = [
+          { name: 'FEEL', color: '#60a5fa' },
+          { name: 'MATERIAL', color: '#f87171' },
+          { name: 'FAVOURITE', color: '#34d399' }
+        ];
+
+        const legend = Elements.chartLegend;
+        legend.innerHTML = legendData.map(item => `
           <div class="stat-item">
-            <span class="stat-label">Total Responses:</span>
-            <span class="stat-value">${total}</span>
+            <span class="stat-label" style="display: flex; align-items: center;">
+              <span style="width: 16px; height: 16px; background: ${item.color}; border-radius: 3px; margin-right: 8px;"></span>
+              ${item.name}
+            </span>
+            <span class="stat-value">${root.children.find(child => child.data.name === item.name)?.value || 0}</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">Most Common Rating:</span>
-            <span class="stat-value">${total > 0 ? Object.keys(materialCounts).reduce((a, b) => materialCounts[a] > materialCounts[b] ? a : b) : 'N/A'}</span>
-          </div>
-        `;
-
-        Elements.chartStats.innerHTML = statsHtml;
+        `).join('');
       },
 
       // Switch dashboard views
@@ -647,6 +927,25 @@
 
     // Form Handler
     const FormHandler = {
+      // Handle login form submission
+      async handleLogin(event) {
+        event.preventDefault();
+
+        const username = Elements.loginUsername.value.trim();
+        const password = Elements.loginPassword.value;
+
+        const success = await UIManager.handleLogin(username, password);
+
+        if (success) {
+          Elements.loginForm.reset();
+          Elements.loginError.classList.add('hidden');
+        } else {
+          Elements.loginError.classList.remove('hidden');
+          Elements.loginPassword.value = '';
+          Elements.loginUsername.focus();
+        }
+      },
+
       // Handle form submission
       async handleSubmit(event) {
         event.preventDefault();
@@ -701,6 +1000,9 @@
       // Form submission
       Elements.clothingForm.addEventListener('submit', FormHandler.handleSubmit);
 
+      // Login form submission
+      Elements.loginForm.addEventListener('submit', FormHandler.handleLogin);
+
       // Field validation on blur
       Elements.clothingForm.addEventListener('blur', (event) => {
         if (event.target.matches('input, textarea')) {
@@ -710,6 +1012,9 @@
 
       // View toggle
       Elements.toggleViewBtn.addEventListener('click', UIManager.toggleView.bind(UIManager));
+
+      // Logout button
+      Elements.logoutBtn.addEventListener('click', UIManager.handleLogout.bind(UIManager));
 
       // Admin dashboard controls
       Elements.refreshDataBtn.addEventListener('click', UIManager.loadAdminData.bind(UIManager));
@@ -752,10 +1057,15 @@
       // Register service worker for PWA
       registerServiceWorker();
 
-      // Check for admin mode in URL
+      // Check login status and URL parameters
+      UIManager.checkLoginStatus();
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('admin') === 'true') {
-        UIManager.toggleView();
+        if (UIManager.checkLoginStatus()) {
+          UIManager.showAdminView();
+        } else {
+          UIManager.showLoginView();
+        }
       }
 
       console.log('The Language of Wearing app initialized');
