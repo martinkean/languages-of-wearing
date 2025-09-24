@@ -1,0 +1,55 @@
+{
+  "name": "The Language of Wearing",
+  "short_name": "Language of Wearing",
+  "description": "Collect and analyze clothing experiences through interactive forms",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["lifestyle", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%236366f1'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='white'>👗</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%236366f1'/><text x='256' y='320' text-anchor='middle' font-size='256' fill='white'>👗</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect width='540' height='720' fill='%23f9fafb'/><rect x='20' y='20' width='500' height='680' rx='12' fill='white' stroke='%23e5e7eb'/><rect x='40' y='40' width='460' height='100' rx='8' fill='%236366f1'/><text x='270' y='85' text-anchor='middle' font-size='24' fill='white' font-family='Inter'>The Language of Wearing</text><text x='270' y='110' text-anchor='middle' font-size='14' fill='white' font-family='Inter'>Share your clothing experiences</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Responses Dashboard",
+      "short_name": "Responses",
+      "description": "Access the Responses dashboard",
+      "url": "/?Responses=true",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%236366f1'/><text x='48' y='60' text-anchor='middle' font-size='48' fill='white'>📊</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

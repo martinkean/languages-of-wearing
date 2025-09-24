@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#6366F1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Language of Wearing">
+
+  <!-- SEO and Description -->
+  <meta name="description" content="Collect and analyze clothing experiences through interactive forms">
+  <meta name="keywords" content="fashion, clothing, experience, survey, analytics">
+
+  <title>The Language of Wearing</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👗</text></svg>">
+
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="stylesheet.css">
+
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Supabase Configuration -->
+  <script src="config.js"></script>
+</head>
+
+<body>
+  <!-- Main Application Container -->
+  <div id="app">
+    <!-- Header Section -->
+    <header class="app-header">
+      <h1 class="app-title">The Language of Wearing</h1>
+      <p class="app-subtitle">Share your clothing experiences and help us understand fashion better</p>
+    </header>
+
+    <!-- Navigation for Admin Toggle -->
+    <nav class="app-nav">
+      <button id="toggleViewBtn" class="toggle-button" aria-label="Switch between user and admin view">
+        Switch to Responses View
+      </button>
+    </nav>
+
+    <!-- User Form View -->
+    <main id="userView" class="main-content">
+      <section class="form-section">
+        <form id="clothingForm" class="clothing-form" novalidate>
+          <!-- Question 1: Physical Feeling -->
+          <article class="question-container">
+            <label for="physicalFeeling" class="question-label">
+              How would you describe the physical feeling of the fashion as you are wearing it?
+            </label>
+            <textarea id="physicalFeeling" name="physicalFeeling" class="text-area-input" rows="4"
+              placeholder="Describe how the clothing feels on your body..." required
+              aria-describedby="physicalFeeling-error"></textarea>
+            <span id="physicalFeeling-error" class="error-message" role="alert"></span>
+          </article>
+
+          <!-- Question 2: Material Quality (Radio Buttons) -->
+          <article class="question-container">
+            <fieldset class="radio-fieldset">
+              <legend class="question-label">
+                How would you describe the material the fashion is made of as you wear it?
+              </legend>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="materialQuality" value="Great" class="radio-input" required>
+                  <span class="radio-custom"></span>
+                  Great
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="materialQuality" value="Okay" class="radio-input" required>
+                  <span class="radio-custom"></span>
+                  Okay
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="materialQuality" value="Not great" class="radio-input" required>
+                  <span class="radio-custom"></span>
+                  Not great
+                </label>
+              </div>
+              <span id="materialQuality-error" class="error-message" role="alert"></span>
+            </fieldset>
+          </article>
+
+          <!-- Question 3: Emotional Feeling -->
+          <article class="question-container">
+            <label for="emotionalFeeling" class="question-label">
+              How does the fashion you tried on make you feel?
+            </label>
+            <textarea id="emotionalFeeling" name="emotionalFeeling" class="text-area-input" rows="4"
+              placeholder="Describe your emotional response to wearing this item..." required
+              aria-describedby="emotionalFeeling-error"></textarea>
+            <span id="emotionalFeeling-error" class="error-message" role="alert"></span>
+          </article>
+
+          <!-- Question 4: Favorite Item -->
+          <article class="question-container">
+            <label for="favoriteItem" class="question-label">
+              What is your favourite item of fashion?
+            </label>
+            <input type="text" id="favoriteItem" name="favoriteItem" class="text-input"
+              placeholder="e.g., vintage denim jacket, silk scarf, leather boots..." required
+              aria-describedby="favoriteItem-error">
+            <span id="favoriteItem-error" class="error-message" role="alert"></span>
+          </article>
+
+          <!-- Question 5: Favorite Reason -->
+          <article class="question-container">
+            <label for="favoriteReason" class="question-label">
+              Why is it your favourite?
+            </label>
+            <textarea id="favoriteReason" name="favoriteReason" class="text-area-input" rows="3"
+              placeholder="Explain what makes this item special to you..." required
+              aria-describedby="favoriteReason-error"></textarea>
+            <span id="favoriteReason-error" class="error-message" role="alert"></span>
+          </article>
+
+          <!-- Submit Section -->
+          <section class="submit-section">
+            <button type="submit" id="submitBtn" class="submit-button">
+              <span class="button-text">Submit Response</span>
+              <span class="button-loader hidden" aria-hidden="true"></span>
+            </button>
+          </section>
+        </form>
+
+        <!-- Success/Error Messages -->
+        <div id="messageContainer" class="message-container hidden">
+          <div id="successMessage" class="success-message hidden" role="status">
+            <strong>Thank you!</strong> Your response has been submitted successfully.
+          </div>
+          <div id="errorMessage" class="error-message-global hidden" role="alert">
+            <strong>Error:</strong> <span id="errorText">Something went wrong. Please try again.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Admin Dashboard View -->
+    <main id="adminView" class="main-content hidden">
+      <section class="admin-section">
+        <header class="admin-header">
+          <h2 class="section-title">Admin Dashboard</h2>
+          <div class="admin-controls">
+            <button id="refreshDataBtn" class="control-button">
+              Refresh Data
+            </button>
+            <button id="exportDataBtn" class="control-button">
+              Export CSV
+            </button>
+          </div>
+        </header>
+
+        <!-- Dashboard Navigation -->
+        <nav class="dashboard-nav">
+          <button id="showListViewBtn" class="nav-tab active" data-view="list">
+            All Responses
+          </button>
+          <button id="showChartViewBtn" class="nav-tab" data-view="chart">
+            Material Quality Chart
+          </button>
+        </nav>
+
+        <!-- List View -->
+        <section id="listView" class="dashboard-view">
+          <div class="data-container">
+            <div id="loadingIndicator" class="loading-indicator">
+              Loading responses...
+            </div>
+            <div id="noDataMessage" class="no-data-message hidden">
+              No responses found. Submit some responses first!
+            </div>
+            <div id="responsesList" class="responses-list hidden"></div>
+          </div>
+        </section>
+
+        <!-- Chart View -->
+        <section id="chartView" class="dashboard-view hidden">
+          <div class="chart-container">
+            <h3 class="chart-title">Material Quality Distribution</h3>
+            <div id="materialChart" class="chart-area">
+              <div class="chart-bars" id="chartBars"></div>
+            </div>
+            <div id="chartStats" class="chart-stats"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- JavaScript for Application Logic -->
+  <script>
+    // Application Configuration
+    const CONFIG = {
+      // Supabase credentials loaded from config.js
+      SUPABASE_URL: window.SUPABASE_CONFIG?.SUPABASE_URL || '',
+      SUPABASE_ANON_KEY: window.SUPABASE_CONFIG?.SUPABASE_ANON_KEY || '',
+      TABLE_NAME: 'clothing_responses'
+    };
+
+    // Validate configuration on app start
+    function validateConfig() {
+      if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+        console.error('Missing Supabase configuration. Please set environment variables.');
+
+        // Show user-friendly error message
+        const errorMessage = `
+          <div style="
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem;
+            border: 1px solid #fca5a5;
+          ">
+            <strong>Configuration Error:</strong> 
+            Database connection not configured. Please contact the administrator.
+          </div>
+        `;
+
+        document.getElementById('app').innerHTML = errorMessage + document.getElementById('app').innerHTML;
+        return false;
+      }
+      return true;
+    }
+
+    // Global State Management
+    const AppState = {
+      currentView: 'user',
+      responses: [],
+      isLoading: false
+    };
+
+    // DOM Elements Cache
+    const Elements = {
+      // Views
+      userView: document.getElementById('userView'),
+      adminView: document.getElementById('adminView'),
+      toggleViewBtn: document.getElementById('toggleViewBtn'),
+
+      // Form
+      clothingForm: document.getElementById('clothingForm'),
+      submitBtn: document.getElementById('submitBtn'),
+      messageContainer: document.getElementById('messageContainer'),
+      successMessage: document.getElementById('successMessage'),
+      errorMessage: document.getElementById('errorMessage'),
+      errorText: document.getElementById('errorText'),
+
+      // Admin Dashboard
+      refreshDataBtn: document.getElementById('refreshDataBtn'),
+      exportDataBtn: document.getElementById('exportDataBtn'),
+      showListViewBtn: document.getElementById('showListViewBtn'),
+      showChartViewBtn: document.getElementById('showChartViewBtn'),
+      listView: document.getElementById('listView'),
+      chartView: document.getElementById('chartView'),
+      responsesList: document.getElementById('responsesList'),
+      loadingIndicator: document.getElementById('loadingIndicator'),
+      noDataMessage: document.getElementById('noDataMessage'),
+      chartBars: document.getElementById('chartBars'),
+      chartStats: document.getElementById('chartStats')
+    };
+
+    // Utility Functions
+    const Utils = {
+      // Format date for display
+      formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      },
+
+      // Sanitize text for HTML display
+      sanitizeText(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      },
+
+      // Show loading state
+      showLoading(element, text = 'Loading...') {
+        element.innerHTML = `<div class="loading-indicator">${text}</div>`;
+      },
+
+      // Generate CSV from data
+      generateCSV(data) {
+        if (!data.length) return '';
+
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+          headers.join(','),
+          ...data.map(row =>
+            headers.map(header => {
+              const value = row[header] || '';
+              return `"${value.toString().replace(/"/g, '""')}"`;
+            }).join(',')
+          )
+        ].join('\n');
+
+        return csvContent;
+      }
+    };
+
+    // Form Validation
+    const FormValidator = {
+      // Validate individual field
+      validateField(field) {
+        const value = field.value.trim();
+        const fieldName = field.name;
+        let isValid = true;
+        let message = '';
+
+        // Remove existing error state
+        field.classList.remove('error');
+        const errorElement = document.getElementById(`${fieldName}-error`);
+        if (errorElement) {
+          errorElement.textContent = '';
+        }
+
+        // Check required fields
+        if (field.required && !value) {
+          isValid = false;
+          message = 'This field is required.';
+        }
+
+        // Specific validation for radio buttons
+        if (field.type === 'radio' && fieldName === 'materialQuality') {
+          const checkedRadio = document.querySelector('input[name="materialQuality"]:checked');
+          if (!checkedRadio) {
+            isValid = false;
+            message = 'Please select a material quality rating.';
+          }
+        }
+
+        // Text area minimum length
+        if (field.tagName === 'TEXTAREA' && value && value.length < 10) {
+          isValid = false;
+          message = 'Please provide a more detailed response (at least 10 characters).';
+        }
+
+        // Show error if invalid
+        if (!isValid) {
+          field.classList.add('error');
+          if (errorElement) {
+            errorElement.textContent = message;
+          }
+        }
+
+        return isValid;
+      },
+
+      // Validate entire form
+      validateForm(form) {
+        const fields = form.querySelectorAll('input[required], textarea[required]');
+        let isFormValid = true;
+
+        fields.forEach(field => {
+          if (!this.validateField(field)) {
+            isFormValid = false;
+          }
+        });
+
+        // Special handling for radio button group
+        const radioGroup = form.querySelector('input[name="materialQuality"]');
+        if (radioGroup && !this.validateField(radioGroup)) {
+          isFormValid = false;
+        }
+
+        return isFormValid;
+      }
+    };
+
+    // Supabase Integration (Mock Implementation)
+    const SupabaseClient = {
+      // Initialize connection (in real app, you'd use the actual Supabase client)
+      init() {
+        // In a real implementation, you would:
+        // return supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized');
+        return this;
+      },
+
+      // Submit response to database
+      async submitResponse(responseData) {
+        try {
+          // Mock delay to simulate network request
+          await new Promise(resolve => setTimeout(resolve, 1500));
+
+          // In real implementation:
+          // const { data, error } = await supabase
+          //   .from(CONFIG.TABLE_NAME)
+          //   .insert([responseData]);
+
+          // Mock success - in production, store in actual Supabase
+          const mockResponse = {
+            id: Date.now(),
+            ...responseData,
+            created_at: new Date().toISOString()
+          };
+
+          // Store in localStorage for demo purposes
+          const existingData = JSON.parse(localStorage.getItem('clothingResponses') || '[]');
+          existingData.push(mockResponse);
+          localStorage.setItem('clothingResponses', JSON.stringify(existingData));
+
+          return { data: mockResponse, error: null };
+        } catch (error) {
+          return { data: null, error: error.message };
+        }
+      },
+
+      // Fetch all responses
+      async getResponses() {
+        try {
+          // Mock delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // In real implementation:
+          // const { data, error } = await supabase
+          //   .from(CONFIG.TABLE_NAME)
+          //   .select('*')
+          //   .order('created_at', { ascending: false });
+
+          // Get from localStorage for demo
+          const data = JSON.parse(localStorage.getItem('clothingResponses') || '[]');
+          return { data: data.reverse(), error: null };
+        } catch (error) {
+          return { data: null, error: error.message };
+        }
+      }
+    };
+
+    // UI State Management
+    const UIManager = {
+      // Toggle between user and admin views
+      toggleView() {
+        const isUserView = AppState.currentView === 'user';
+
+        if (isUserView) {
+          Elements.userView.classList.add('hidden');
+          Elements.adminView.classList.remove('hidden');
+          Elements.toggleViewBtn.textContent = 'Switch to User View';
+          AppState.currentView = 'admin';
+          this.loadAdminData();
+        } else {
+          Elements.adminView.classList.add('hidden');
+          Elements.userView.classList.remove('hidden');
+          Elements.toggleViewBtn.textContent = 'Switch to Admin View';
+          AppState.currentView = 'user';
+        }
+      },
+
+      // Show success message
+      showSuccess(message) {
+        Elements.messageContainer.classList.remove('hidden');
+        Elements.successMessage.classList.remove('hidden');
+        Elements.errorMessage.classList.add('hidden');
+        Elements.successMessage.querySelector('strong').nextSibling.textContent = ' ' + message;
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          Elements.messageContainer.classList.add('hidden');
+        }, 5000);
+      },
+
+      // Show error message
+      showError(message) {
+        Elements.messageContainer.classList.remove('hidden');
+        Elements.errorMessage.classList.remove('hidden');
+        Elements.successMessage.classList.add('hidden');
+        Elements.errorText.textContent = message;
+
+        // Auto-hide after 7 seconds
+        setTimeout(() => {
+          Elements.messageContainer.classList.add('hidden');
+        }, 7000);
+      },
+
+      // Set loading state for submit button
+      setSubmitLoading(isLoading) {
+        const buttonText = Elements.submitBtn.querySelector('.button-text');
+        const buttonLoader = Elements.submitBtn.querySelector('.button-loader');
+
+        if (isLoading) {
+          Elements.submitBtn.disabled = true;
+          Elements.submitBtn.classList.add('loading');
+          buttonText.textContent = 'Submitting...';
+          buttonLoader.classList.remove('hidden');
+        } else {
+          Elements.submitBtn.disabled = false;
+          Elements.submitBtn.classList.remove('loading');
+          buttonText.textContent = 'Submit Response';
+          buttonLoader.classList.add('hidden');
+        }
+      },
+
+      // Load admin dashboard data
+      async loadAdminData() {
+        Elements.loadingIndicator.classList.remove('hidden');
+        Elements.noDataMessage.classList.add('hidden');
+        Elements.responsesList.classList.add('hidden');
+
+        const { data, error } = await SupabaseClient.getResponses();
+
+        Elements.loadingIndicator.classList.add('hidden');
+
+        if (error) {
+          this.showError('Failed to load responses: ' + error);
+          return;
+        }
+
+        AppState.responses = data || [];
+
+        if (AppState.responses.length === 0) {
+          Elements.noDataMessage.classList.remove('hidden');
+        } else {
+          this.renderResponsesList();
+          this.renderMaterialChart();
+        }
+      },
+
+      // Render responses list
+      renderResponsesList() {
+        const html = AppState.responses.map((response, index) => `
+          <article class="response-card">
+            <header class="response-header">
+              <h4 class="response-title">Response #${AppState.responses.length - index}</h4>
+              <time class="response-date">${Utils.formatDate(response.created_at)}</time>
+            </header>
+            <div class="response-content">
+              <div class="response-item">
+                <strong>Physical Feeling:</strong>
+                <p>${Utils.sanitizeText(response.physical_feeling)}</p>
+              </div>
+              <div class="response-item">
+                <strong>Material Quality:</strong>
+                <span class="material-badge material-${response.material_quality.toLowerCase().replace(' ', '-')}">${response.material_quality}</span>
+              </div>
+              <div class="response-item">
+                <strong>Emotional Feeling:</strong>
+                <p>${Utils.sanitizeText(response.emotional_feeling)}</p>
+              </div>
+              <div class="response-item">
+                <strong>Favorite Item:</strong>
+                <p>${Utils.sanitizeText(response.favorite_item)}</p>
+              </div>
+              <div class="response-item">
+                <strong>Favorite Reason:</strong>
+                <p>${Utils.sanitizeText(response.favorite_reason)}</p>
+              </div>
+            </div>
+          </article>
+        `).join('');
+
+        Elements.responsesList.innerHTML = html;
+        Elements.responsesList.classList.remove('hidden');
+      },
+
+      // Render material quality chart
+      renderMaterialChart() {
+        const materialCounts = AppState.responses.reduce((acc, response) => {
+          acc[response.material_quality] = (acc[response.material_quality] || 0) + 1;
+          return acc;
+        }, {});
+
+        const total = AppState.responses.length;
+        const categories = ['Great', 'Okay', 'Not great'];
+        const maxCount = Math.max(...Object.values(materialCounts));
+
+        const barsHtml = categories.map(category => {
+          const count = materialCounts[category] || 0;
+          const percentage = total > 0 ? (count / total * 100).toFixed(1) : 0;
+          const height = maxCount > 0 ? (count / maxCount * 100) : 0;
+
+          return `
+            <div class="chart-bar-container">
+              <div class="chart-bar chart-bar-${category.toLowerCase().replace(' ', '-')}" 
+                   style="height: ${height}%">
+                <span class="bar-count">${count}</span>
+              </div>
+              <div class="bar-label">${category}</div>
+              <div class="bar-percentage">${percentage}%</div>
+            </div>
+          `;
+        }).join('');
+
+        Elements.chartBars.innerHTML = barsHtml;
+
+        const statsHtml = `
+          <div class="stat-item">
+            <span class="stat-label">Total Responses:</span>
+            <span class="stat-value">${total}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Most Common Rating:</span>
+            <span class="stat-value">${total > 0 ? Object.keys(materialCounts).reduce((a, b) => materialCounts[a] > materialCounts[b] ? a : b) : 'N/A'}</span>
+          </div>
+        `;
+
+        Elements.chartStats.innerHTML = statsHtml;
+      },
+
+      // Switch dashboard views
+      switchDashboardView(view) {
+        // Update nav tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+        // Show appropriate view
+        Elements.listView.classList.toggle('hidden', view !== 'list');
+        Elements.chartView.classList.toggle('hidden', view !== 'chart');
+      },
+
+      // Export data as CSV
+      exportData() {
+        if (AppState.responses.length === 0) {
+          this.showError('No data to export');
+          return;
+        }
+
+        const csvData = Utils.generateCSV(AppState.responses);
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+
+        if (link.download !== undefined) {
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', `clothing-responses-${new Date().toISOString().split('T')[0]}.csv`);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    };
+
+    // Form Handler
+    const FormHandler = {
+      // Handle form submission
+      async handleSubmit(event) {
+        event.preventDefault();
+
+        const form = event.target;
+
+        // Validate form
+        if (!FormValidator.validateForm(form)) {
+          return;
+        }
+
+        // Prepare form data
+        const formData = new FormData(form);
+        const responseData = {
+          physical_feeling: formData.get('physicalFeeling').trim(),
+          material_quality: formData.get('materialQuality'),
+          emotional_feeling: formData.get('emotionalFeeling').trim(),
+          favorite_item: formData.get('favoriteItem').trim(),
+          favorite_reason: formData.get('favoriteReason').trim()
+        };
+
+        // Show loading state
+        UIManager.setSubmitLoading(true);
+
+        // Submit to database
+        const { data, error } = await SupabaseClient.submitResponse(responseData);
+
+        // Hide loading state
+        UIManager.setSubmitLoading(false);
+
+        if (error) {
+          UIManager.showError('Failed to submit response. Please try again.');
+          return;
+        }
+
+        // Show success and reset form
+        UIManager.showSuccess('Your response has been submitted successfully!');
+        form.reset();
+
+        // Remove any error states
+        form.querySelectorAll('.error').forEach(field => {
+          field.classList.remove('error');
+        });
+        form.querySelectorAll('.error-message').forEach(error => {
+          error.textContent = '';
+        });
+      }
+    };
+
+    // Event Listeners
+    function initEventListeners() {
+      // Form submission
+      Elements.clothingForm.addEventListener('submit', FormHandler.handleSubmit);
+
+      // Field validation on blur
+      Elements.clothingForm.addEventListener('blur', (event) => {
+        if (event.target.matches('input, textarea')) {
+          FormValidator.validateField(event.target);
+        }
+      }, true);
+
+      // View toggle
+      Elements.toggleViewBtn.addEventListener('click', UIManager.toggleView.bind(UIManager));
+
+      // Admin dashboard controls
+      Elements.refreshDataBtn.addEventListener('click', UIManager.loadAdminData.bind(UIManager));
+      Elements.exportDataBtn.addEventListener('click', UIManager.exportData.bind(UIManager));
+
+      // Dashboard navigation
+      Elements.showListViewBtn.addEventListener('click', () => UIManager.switchDashboardView('list'));
+      Elements.showChartViewBtn.addEventListener('click', () => UIManager.switchDashboardView('chart'));
+    }
+
+    // PWA Service Worker Registration
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    }
+
+    // Application Initialization
+    function initApp() {
+      // Validate configuration first
+      if (!validateConfig()) {
+        console.log('App initialization stopped due to configuration errors');
+        return;
+      }
+
+      // Initialize Supabase client
+      SupabaseClient.init();
+
+      // Set up event listeners
+      initEventListeners();
+
+      // Register service worker for PWA
+      registerServiceWorker();
+
+      // Check for admin mode in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('admin') === 'true') {
+        UIManager.toggleView();
+      }
+
+      console.log('The Language of Wearing app initialized');
+    }
+
+    // Start the application when DOM is loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+</body>
+
+</html>
